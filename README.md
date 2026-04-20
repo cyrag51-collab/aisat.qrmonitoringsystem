@@ -1,0 +1,2 @@
+# aisat.qrmonitoringsystem
+A QR Monitoring System is a digital solution that uses QR code technology to track, manage, and monitor equipment in real time. It improves efficiency, enhances security, and simplifies record-keeping by allowing users to quickly scan QR codes for instant access to information, status updates, and monitoring logs.
