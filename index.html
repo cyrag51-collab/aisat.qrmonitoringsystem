@@ -269,8 +269,8 @@ function renderAll() {
 }
 
 function processBulkReturn() {
-    const user = document.getElementById('bulkReturnUser').value;
-    if(!user) return alert("Select a user first.");
+    const user = document.getElementById('Return').value;
+    if(!user) return alert("Select a user.");
     
     const borrowedItems = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
     const itemCount = borrowedItems.length;
@@ -281,7 +281,7 @@ function processBulkReturn() {
             item.borrower = '';
             item.returnTime = new Date().toLocaleString();
         });
-        logEvent(user, `${itemCount} Items`, "Bulk Return Processed");
+        logEvent(user, `${itemCount} Items`, "Return Processed");
         alert("Returned " + itemCount + " items.");
     }
 }
