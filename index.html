@@ -33,23 +33,28 @@
         .pass-wrapper { position: relative; width: 100%; }
         .toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 10px; color: #00d9ffaa; background: none; border: none; font-family: inherit; }
 
-        button.action { background: #00d9ff; color: #02111f; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; }
+        button.action { background: #00d9ff; color: #02111f; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 5px; }
         button.small-btn { padding: 4px 8px; font-size: 10px; cursor: pointer; background: #00d9ff22; color: #00d9ff; border: 1px solid #00d9ff55; }
         .logout-btn { background: transparent; border: 1px solid #ff4444; color: #ff4444; padding: 5px 12px; cursor: pointer; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
         th, td { padding: 12px; border: 1px solid #00d9ff22; text-align: left; }
-        th { background: #00d9ff11; }
+        th { background: #00d9ff11; color: #00d9ff; }
 
         #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .notif-item { padding: 15px; background: #001a2a; margin-bottom: 8px; border-left: 3px solid #00ff99; }
+        
+        .status-tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .status-available { background: #00ff9922; color: #00ff99; }
+        .status-borrowed { background: #ffcc0022; color: #ffcc00; }
+        .status-pending { background: #00d9ff22; color: #00d9ff; }
     </style>
 </head>
 <body>
 
 <div id="qr-modal">
-    <h2 id="qr-header" style="color: #00ff99; margin-bottom: 15px;">BORROWER'S PASS</h2>
+    <h2 style="color: #00ff99; margin-bottom: 15px;">ACTIVE BORROWER'S PASS</h2>
     <div id="qr-container"></div>
     <p id="qr-text" style="color: #00d9ff; font-size: 11px; margin-bottom: 20px;"></p>
     <button class="logout-btn" onclick="closeQR()">CLOSE PASS</button>
@@ -85,7 +90,7 @@
 <header>
     <div class="logo">
         <img src="images-removebg-preview.png" alt="AISAT" onerror="this.style.display='none'">
-        <div><h1>AISAT COLLEGE</h1><p>Equipment Monitoring System</p></div>
+        <div><h1>AISAT COLLEGE</h1><p>Monitoring System</p></div>
     </div>
     <div style="text-align: right;">
         <span id="display-name" style="color: #00ff99; font-weight: bold;"></span>
@@ -95,83 +100,90 @@
 
 <nav>
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
-    <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Tools</button>
+    <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Database</button>
     <button class="tab" onclick="showTab('borrow-section',this)">Borrow Items</button>
-    <button class="tab" onclick="showTab('notif-section',this)">Alerts</button>
+    <button class="tab" onclick="showTab('notif-section',this)">Passes/Alerts</button>
 </nav>
 
 <div class="container">
     <section id="dashboard">
         <div class="panel">
-            <h3>Inventory Overview</h3>
-            <p>Total Items: <span id="totalEquip">0</span></p>
-            <p>Pending Requests: <span id="pending-stat">0</span></p>
+            <h3>My Current Inventory</h3>
+            <table>
+                <thead><tr><th>Item</th><th>ID</th><th>Status</th></tr></thead>
+                <tbody id="myItemsTable"></tbody>
+            </table>
         </div>
     </section>
 
     <section id="admin-section" class="hidden">
         <div class="panel">
-            <h3>User Management Database</h3>
-            <table>
-                <thead>
-                    <tr><th>Name</th><th>Username</th><th>Role</th><th>Actions</th></tr>
-                </thead>
+            <h3>User Management</h3>
+            <table id="userTable">
+                <thead><tr><th>Name</th><th>Role</th><th>Actions</th></tr></thead>
                 <tbody id="userTableBody"></tbody>
             </table>
         </div>
 
         <div class="panel">
-            <h3>Pending Requests</h3>
+            <h3>Borrow Requests & Returns</h3>
             <table>
-                <thead><tr><th>Item</th><th>User</th><th>Action</th></tr></thead>
-                <tbody id="pendingRequestsTable"></tbody>
+                <thead><tr><th>Item</th><th>User</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="adminRequestTable"></tbody>
             </table>
         </div>
 
         <div class="panel">
-            <h3>Inventory Management</h3>
-            <input id="eqName" placeholder="Item Name">
-            <input type="number" id="eqQty" placeholder="Qty">
-            <button class="action" onclick="addEquipment()">ADD TO STOCK</button>
+            <h3>Add New Stock</h3>
+            <input id="eqName" placeholder="Item Name (e.g. Projector)">
+            <input type="number" id="eqQty" placeholder="Quantity">
+            <button class="action" onclick="addEquipment()">REGISTER STOCK</button>
         </div>
     </section>
 
     <section id="borrow-section" class="hidden">
         <div class="panel">
-            <h3>Request Items</h3>
+            <h3>Available for Borrowing</h3>
             <div id="borrow-list-container"></div>
-            <button class="action" style="margin-top:20px" onclick="requestBulk()">SUBMIT REQUEST</button>
+            <button class="action" style="margin-top:20px" onclick="requestBulk()">SUBMIT BORROW REQUEST</button>
         </div>
     </section>
 
     <section id="notif-section" class="hidden">
         <div class="panel">
-            <h3>System Alerts</h3>
+            <h3>Your QR Passes</h3>
+            <p style="font-size: 11px; color: #ffcc00; margin-bottom: 10px;">Note: QR Codes expire automatically once the item is returned.</p>
             <div id="notif-list"></div>
         </div>
     </section>
 </div>
 
 <script>
+// --- DB ---
 let users = JSON.parse(localStorage.getItem('aisat_users')) || {
     "admin": { password: "Admin123", role: "admin", name: "System Admin", idNum: "MASTER-001" }
 };
 
 let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [
-    { id: 1, baseName: "Projector", status: 'Available', borrower: '' },
-    { id: 2, baseName: "HDMI Cable", status: 'Available', borrower: '' }
+    { id: 'EQ-001', baseName: "Projector", status: 'Available', borrower: '', qrActive: false },
+    { id: 'EQ-002', baseName: "HDMI Cable", status: 'Available', borrower: '', qrActive: false }
 ];
 
-let notifications = JSON.parse(localStorage.getItem('aisat_notifs')) || [];
 let currentUser = null;
+
+// --- UTILS ---
+function save() {
+    localStorage.setItem('aisat_users', JSON.stringify(users));
+    localStorage.setItem('aisat_equip', JSON.stringify(equipment));
+    renderAll();
+}
 
 function togglePass(id) {
     const input = document.getElementById(id);
-    const btn = input.nextElementSibling;
     input.type = input.type === "password" ? "text" : "password";
-    btn.textContent = input.type === "password" ? "SHOW" : "HIDE";
 }
 
+// --- AUTH ---
 function handleLogin() {
     const u = document.getElementById('username').value.trim();
     const p = document.getElementById('password').value.trim();
@@ -186,91 +198,96 @@ function handleLogin() {
 
 function handleSignup() {
     const u = document.getElementById('reg-user').value.trim();
-    if(!u) return alert("Username required");
+    if(!u) return;
     users[u] = {
         name: document.getElementById('reg-name').value,
         idNum: document.getElementById('reg-id').value,
         password: document.getElementById('reg-pass').value,
         role: "user"
     };
-    save(); alert("Account Created!"); toggleAuth('login');
+    save(); toggleAuth('login');
 }
 
-function setUserRole(u, role) {
-    if(u === 'admin') return alert("Master Admin role cannot be changed.");
-    users[u].role = role;
-    save();
-}
-
-function deleteUser(u) {
-    if(u === 'admin') return alert("Cannot delete Master Admin.");
-    if(confirm(`Delete user ${u}?`)) {
-        delete users[u];
-        save();
-    }
-}
-
+// --- CORE LOGIC ---
 function renderAll() {
-    document.getElementById('totalEquip').textContent = equipment.length;
-    document.getElementById('pending-stat').textContent = equipment.filter(e => e.status === 'Pending').length;
+    // 1. My Dashboard Items
+    const myItems = equipment.filter(e => e.borrower === currentUser.username);
+    document.getElementById('myItemsTable').innerHTML = myItems.map(e => `
+        <tr><td>${e.baseName}</td><td>${e.id}</td><td><span class="status-tag status-${e.status.toLowerCase()}">${e.status}</span></td></tr>
+    `).join('') || '<tr><td colspan="3">No items currently held.</td></tr>';
 
-    if(currentUser && currentUser.role === 'admin') {
-        document.getElementById('userTableBody').innerHTML = Object.keys(users).map(u => `
-            <tr>
-                <td>${users[u].name}</td>
-                <td>${u}</td>
-                <td style="color:${users[u].role === 'admin' ? '#00ff99' : '#bfc3d8'}">${users[u].role.toUpperCase()}</td>
-                <td>
-                    <button class="small-btn" onclick="setUserRole('${u}', '${users[u].role === 'admin' ? 'user' : 'admin'}')">TOGGLE ROLE</button>
-                    <button class="small-btn" style="color:#ff4444" onclick="deleteUser('${u}')">REMOVE</button>
-                </td>
-            </tr>
-        `).join('');
-
-        const pending = equipment.filter(e => e.status === 'Pending');
-        document.getElementById('pendingRequestsTable').innerHTML = pending.map(e => `
-            <tr><td>${e.baseName}</td><td>${e.borrower}</td>
-            <td><button class="small-btn" onclick="approveItem(${e.id})">APPROVE</button></td></tr>
-        `).join('');
-    }
-
+    // 2. Borrowing List
     const cats = [...new Set(equipment.map(e => e.baseName))];
     document.getElementById('borrow-list-container').innerHTML = cats.map(cat => {
         const avail = equipment.filter(e => e.baseName === cat && e.status === 'Available').length;
-        return `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between">
-            <span>${cat} (${avail})</span>
+        return `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+            <span>${cat} <small style="color:#00ff99">(${avail} left)</small></span>
             <input type="number" class="qty-input" data-cat="${cat}" min="0" max="${avail}" value="0" style="width:60px; margin:0">
         </div>`;
     }).join('');
 
-    const myNotifs = notifications.filter(n => n.target === currentUser.username).reverse();
-    document.getElementById('notif-list').innerHTML = myNotifs.map(n => `
+    // 3. QR Passes (Only show if status is Borrowed and qrActive is true)
+    const activePasses = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed' && e.qrActive);
+    document.getElementById('notif-list').innerHTML = activePasses.map(e => `
         <div class="notif-item">
-            <strong>${n.title}</strong>: ${n.msg}
-            ${n.qrData ? `<br><button class="action" style="padding:5px; font-size:10px; margin-top:10px;" onclick="openQR('${n.qrData}')">VIEW QR PASS</button>` : ''}
+            <strong>PASS GRANTED: ${e.baseName}</strong><br>
+            <small>ID: ${e.id}</small><br>
+            <button class="action" style="font-size:11px; margin-top:10px" onclick="openQR('${e.id}','${e.baseName}')">GENERATE QR</button>
         </div>
-    `).join('');
+    `).join('') || '<p>No active passes. Once admin approves your request, your QR will appear here.</p>';
+
+    // 4. Admin Database
+    if(currentUser.role === 'admin') {
+        // User List
+        document.getElementById('userTableBody').innerHTML = Object.keys(users).map(u => `
+            <tr><td>${users[u].name}</td><td>${users[u].role}</td>
+            <td><button class="small-btn" onclick="deleteUser('${u}')">REMOVE</button></td></tr>
+        `).join('');
+
+        // Requests & Returns
+        const requests = equipment.filter(e => e.status !== 'Available');
+        document.getElementById('adminRequestTable').innerHTML = requests.map(e => `
+            <tr>
+                <td>${e.baseName}</td><td>${e.borrower}</td>
+                <td><span class="status-tag status-${e.status.toLowerCase()}">${e.status}</span></td>
+                <td>
+                    ${e.status === 'Pending' ? `<button class="small-btn" onclick="approveBorrow('${e.id}')">APPROVE</button>` : ''}
+                    ${e.status === 'Borrowed' ? `<button class="small-btn" style="color:#ff4444" onclick="returnItem('${e.id}')">RETURN ITEM</button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+    }
 }
 
+// --- ACTION FUNCTIONS ---
 function requestBulk() {
     document.querySelectorAll('.qty-input').forEach(input => {
         const qty = parseInt(input.value);
         const cat = input.getAttribute('data-cat');
         if(qty > 0) {
             equipment.filter(e => e.baseName === cat && e.status === 'Available').slice(0, qty).forEach(item => {
-                item.status = 'Pending'; item.borrower = currentUser.username;
+                item.status = 'Pending'; 
+                item.borrower = currentUser.username;
             });
         }
     });
-    save(); alert("Request Sent");
+    save(); alert("Request submitted for approval.");
 }
 
-function approveItem(id) {
+function approveBorrow(id) {
     const item = equipment.find(e => e.id === id);
     item.status = 'Borrowed';
-    const qrString = `AISAT|ID:${item.id}|USER:${item.borrower}|ITEM:${item.baseName}|DATE:${new Date().toLocaleDateString()}`;
-    notifications.push({ target: item.borrower, title: "APPROVED", msg: `Accepted: ${item.baseName}`, qrData: qrString });
+    item.qrActive = true; // QR is now generated/active
     save();
+}
+
+function returnItem(id) {
+    const item = equipment.find(e => e.id === id);
+    item.status = 'Available';
+    item.borrower = '';
+    item.qrActive = false; // QR EXPIRES HERE
+    save();
+    alert("Item returned. QR Code has expired.");
 }
 
 function addEquipment() {
@@ -278,22 +295,18 @@ function addEquipment() {
     const qty = parseInt(document.getElementById('eqQty').value);
     if(!name || !qty) return;
     for(let i=0; i<qty; i++) {
-        equipment.push({ id: Date.now() + Math.random(), baseName: name, status: 'Available', borrower: '' });
+        equipment.push({ id: 'EQ-' + Math.floor(Math.random()*9000+1000), baseName: name, status: 'Available', borrower: '', qrActive: false });
     }
     save();
 }
 
-function save() {
-    localStorage.setItem('aisat_users', JSON.stringify(users));
-    localStorage.setItem('aisat_equip', JSON.stringify(equipment));
-    localStorage.setItem('aisat_notifs', JSON.stringify(notifications));
-    renderAll();
-}
+function deleteUser(u) { if(u !== 'admin' && confirm('Delete user?')) { delete users[u]; save(); } }
 
-function openQR(data) {
+function openQR(id, name) {
     document.getElementById('qr-container').innerHTML = "";
-    new QRCode(document.getElementById("qr-container"), { text: data, width: 160, height: 160 });
-    document.getElementById('qr-text').innerText = data;
+    const data = `AISAT-PASS|${id}|${currentUser.username}|${new Date().toLocaleDateString()}`;
+    new QRCode(document.getElementById("qr-container"), { text: data, width: 180, height: 180 });
+    document.getElementById('qr-text').innerText = "ITEM: " + name + " (" + id + ")";
     document.getElementById('qr-modal').style.display = 'flex';
 }
 
