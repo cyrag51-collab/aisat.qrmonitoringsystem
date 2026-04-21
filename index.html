@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AISAT College — QR Equipment Monitoring System</title>
+    <title>AISAT College — QR Monitoring System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -33,11 +33,11 @@
         .btn-red { color: #ff4444; border-color: #ff444455; }
         .btn-green { color: #00ff99; border-color: #00ff9955; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-        th, td { padding: 12px; border: 1px solid #00d9ff22; text-align: left; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+        th, td { padding: 10px; border: 1px solid #00d9ff22; text-align: left; }
         th { color: #00d9ff; background: #00d9ff08; }
 
-        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; background: #000; }
+        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; }
         #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
     </style>
@@ -59,7 +59,7 @@
             <input type="password" id="password" placeholder="Password">
             <button class="action" onclick="handleLogin()">ACCESS SYSTEM</button>
             <div style="margin-top: 15px; font-size: 11px;">
-                <a href="#" onclick="alert('Contact IT to reset.')" style="color:#ffcc00; text-decoration: none; margin-right: 10px;">Forgot Password?</a>
+                <a href="#" onclick="alert('Contact IT Support.')" style="color:#ffcc00; text-decoration: none; margin-right: 10px;">Forgot Password?</a>
                 <a href="#" onclick="toggleAuth('signup')" style="color:#00d9ff; text-decoration: none;">Create Account</a>
             </div>
         </div>
@@ -75,22 +75,30 @@
 </div>
 
 <header>
-    <div class="logo"><h1>AISAT COLLEGE</h1></div>
-    <div><span id="display-name" style="color: #00ff99;"></span> <button onclick="location.reload()" class="small-btn btn-red">LOGOUT</button></div>
+    <div class="logo"><h1>AISAT</h1></div>
+    <div style="text-align: right;">
+        <span id="display-info" style="color: #00ff99; font-size: 12px; margin-right: 10px;"></span>
+        <button onclick="location.reload()" class="small-btn btn-red">LOGOUT</button>
+    </div>
 </header>
 
 <nav>
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
     <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Tools</button>
     <button class="tab" onclick="showTab('borrow-section',this)">Borrow Items</button>
-    <button class="tab" onclick="showTab('notif-section',this)">Passes</button>
+    <button class="tab" onclick="showTab('notif-section',this)">Alerts</button>
 </nav>
 
 <div class="container">
     <section id="dashboard">
         <div class="panel">
-            <h3>My Inventory</h3>
-            <table id="myItemsTable"></table>
+            <h3>My Inventory (Current & History)</h3>
+            <table>
+                <thead>
+                    <tr><th>Item Name</th><th>ID</th><th>Borrowed At</th><th>Returned At</th><th>Status</th></tr>
+                </thead>
+                <tbody id="myItemsTable"></tbody>
+            </table>
         </div>
     </section>
 
@@ -103,34 +111,20 @@
         </div>
 
         <div class="panel">
-            <h3>Pending Borrow Requests (Grouped)</h3>
-            <table>
-                <thead><tr><th>Item</th><th>Borrower</th><th>Qty</th><th>Actions</th></tr></thead>
-                <tbody id="adminRequestTable"></tbody>
-            </table>
-        </div>
-
-        <div class="panel">
-            <h3>Active Loans (Bulk Returns)</h3>
-            <table>
-                <thead><tr><th>Item</th><th>Borrower</th><th>Qty</th><th>Actions</th></tr></thead>
-                <tbody id="adminActiveLoansTable"></tbody>
-            </table>
+            <h3>Pending Requests</h3>
+            <table id="adminRequestTable"></table>
         </div>
 
         <div class="panel">
             <h3>User Database</h3>
-            <table>
-                <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Actions</th></tr></thead>
-                <tbody id="userDatabaseTable"></tbody>
-            </table>
+            <table id="userDatabaseTable"></table>
         </div>
 
         <div class="panel">
-            <h3>Add Stock</h3>
+            <h3>Stock Management</h3>
             <input id="eqName" placeholder="Item Name">
             <input type="number" id="eqQty" placeholder="Quantity">
-            <button class="action" onclick="addEquipment()">ADD TO DATABASE</button>
+            <button class="action" onclick="addEquipment()">ADD STOCK</button>
         </div>
     </section>
 
@@ -147,46 +141,107 @@
             <h3>Active QR Passes</h3>
             <div id="notif-list"></div>
         </div>
+        <div class="panel">
+            <h3>System History (Last 50 Entries)</h3>
+            <table id="historyTable">
+                <thead><tr><th>Time</th><th>User</th><th>Item</th><th>Event</th></tr></thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
     </section>
 </div>
 
 <script>
+// --- DB ---
 let users = JSON.parse(localStorage.getItem('aisat_users')) || {
     "admin": { password: "Admin123", role: "admin", name: "System Admin" }
 };
 let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [];
+let historyLog = JSON.parse(localStorage.getItem('aisat_history')) || [];
+
 let currentUser = null;
 let html5QrCode = null;
 
 function save() {
     localStorage.setItem('aisat_users', JSON.stringify(users));
     localStorage.setItem('aisat_equip', JSON.stringify(equipment));
+    localStorage.setItem('aisat_history', JSON.stringify(historyLog.slice(0, 50))); // Keep 50
     renderAll();
 }
 
+function logEvent(user, item, event) {
+    const time = new Date().toLocaleString();
+    historyLog.unshift({ time, user, item, event });
+    if(historyLog.length > 50) historyLog.pop();
+    save();
+}
+
+// --- AUTH ---
 function handleLogin() {
     const u = document.getElementById('username').value.trim();
     const p = document.getElementById('password').value.trim();
     if (users[u] && users[u].password === p) {
         currentUser = { ...users[u], username: u };
         document.getElementById('login-overlay').classList.add('hidden');
-        document.getElementById('display-name').textContent = currentUser.name;
+        document.getElementById('display-info').textContent = `${currentUser.name} (@${u})`;
         document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'admin');
         renderAll();
-    } else { alert("Error: Wrong Login"); }
+    } else { alert("Login failed."); }
 }
 
 function handleSignup() {
     const u = document.getElementById('reg-user').value.trim();
-    if(!u) return;
     users[u] = { name: document.getElementById('reg-name').value, password: document.getElementById('reg-pass').value, role: "user" };
     save(); toggleAuth('login');
 }
 
+// --- RENDER ---
 function renderAll() {
     if(!currentUser) return;
 
-    // Student Borrow View
+    // Dashboard: My Items + Timestamps
+    const myItems = equipment.filter(e => e.borrower === currentUser.username);
+    document.getElementById('myItemsTable').innerHTML = myItems.map(e => `
+        <tr>
+            <td>${e.baseName}</td>
+            <td>${e.id}</td>
+            <td style="color:#00ff99">${e.borrowTime || '--'}</td>
+            <td style="color:#ff4444">${e.returnTime || '--'}</td>
+            <td>${e.status}</td>
+        </tr>
+    `).join('') || '<tr><td colspan="5">No active items.</td></tr>';
+
+    // Alerts (Passes)
+    const qrItems = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed' && e.qrActive);
+    document.getElementById('notif-list').innerHTML = qrItems.map(e => `
+        <div class="panel"><strong>${e.baseName}</strong> (ID: ${e.id})<br><button class="action" onclick="openQR('${e.id}','${e.baseName}')">SHOW QR</button></div>
+    `).join('') || 'No pending QR codes.';
+
+    // History Log (50 Entries)
+    document.getElementById('historyBody').innerHTML = historyLog.map(h => `
+        <tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>
+    `).join('');
+
+    // Admin Tools
+    if(currentUser.role === 'admin') {
+        const pending = equipment.filter(e => e.status === 'Pending');
+        const grouped = {};
+        pending.forEach(item => {
+            const key = `${item.borrower}|${item.baseName}`;
+            if(!grouped[key]) grouped[key] = { user: item.borrower, item: item.baseName, count: 0 };
+            grouped[key].count++;
+        });
+        document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Actions</th></tr></thead><tbody>` + 
+        Object.values(grouped).map(g => `
+            <tr><td>${g.item}</td><td>${g.user}</td><td>${g.count}</td>
+            <td><button class="small-btn btn-green" onclick="bulkAction('${g.user}', '${g.item}', 'approve')">APPROVE</button></td></tr>
+        `).join('') + `</tbody>`;
+
+        document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>User</th><th>Role</th></tr></thead><tbody>` +
+        Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td></tr>`).join('') + `</tbody>`;
+    }
+
+    // Borrow List
     const cats = [...new Set(equipment.map(e => e.baseName))];
     document.getElementById('borrow-list-container').innerHTML = cats.map(cat => {
         const avail = equipment.filter(e => e.baseName === cat && e.status === 'Available').length;
@@ -195,71 +250,32 @@ function renderAll() {
             <input type="number" class="qty-input" data-cat="${cat}" min="0" max="${avail}" value="0" style="width:60px; margin:0">
         </div>`;
     }).join('');
+}
 
-    // Dashboard Items
-    const myItems = equipment.filter(e => e.borrower === currentUser.username);
-    document.getElementById('myItemsTable').innerHTML = myItems.map(e => `
-        <tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.status}</td></tr>
-    `).join('') || 'No items.';
+// --- ACTIONS ---
+function bulkAction(user, itemName, action) {
+    const time = new Date().toLocaleString();
+    equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending').forEach(item => {
+        item.status = 'Borrowed'; 
+        item.qrActive = true;
+        item.borrowTime = time;
+        item.returnTime = '--';
+    });
+    logEvent(user, itemName, "Bulk Approval");
+}
 
-    // Passes (QR List)
-    const qrItems = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed' && e.qrActive);
-    document.getElementById('notif-list').innerHTML = qrItems.map(e => `
-        <div class="panel"><strong>${e.baseName}</strong> (ID: ${e.id})<br><button class="action" onclick="openQR('${e.id}','${e.baseName}')">OPEN QR</button></div>
-    `).join('') || 'No active passes.';
-
-    // Admin Tools Rendering
-    if(currentUser.role === 'admin') {
-        // Grouped Pending Requests
-        const pending = equipment.filter(e => e.status === 'Pending');
-        const pGroup = {};
-        pending.forEach(item => {
-            const key = `${item.borrower}|${item.baseName}`;
-            if(!pGroup[key]) pGroup[key] = { user: item.borrower, item: item.baseName, count: 0 };
-            pGroup[key].count++;
-        });
-        document.getElementById('adminRequestTable').innerHTML = Object.values(pGroup).map(g => `
-            <tr><td>${g.item}</td><td>${g.user}</td><td>${g.count}</td>
-            <td><button class="small-btn btn-green" onclick="bulkAction('${g.user}', '${g.item}', 'approve')">APPROVE ALL</button>
-            <button class="small-btn btn-red" onclick="bulkAction('${g.user}', '${g.item}', 'deny')">DENY ALL</button></td></tr>
-        `).join('') || '<tr><td colspan="4">No pending requests</td></tr>';
-
-        // Grouped Active Loans for Bulk Return
-        const borrowed = equipment.filter(e => e.status === 'Borrowed');
-        const bGroup = {};
-        borrowed.forEach(item => {
-            const key = `${item.borrower}|${item.baseName}`;
-            if(!bGroup[key]) bGroup[key] = { user: item.borrower, item: item.baseName, count: 0 };
-            bGroup[key].count++;
-        });
-        document.getElementById('adminActiveLoansTable').innerHTML = Object.values(bGroup).map(g => `
-            <tr><td>${g.item}</td><td>${g.user}</td><td>${g.count}</td>
-            <td><button class="small-btn btn-red" onclick="bulkAction('${g.user}', '${g.item}', 'return')">RETURN ALL</button></td></tr>
-        `).join('') || '<tr><td colspan="4">No active loans</td></tr>';
-
-        // User Database
-        document.getElementById('userDatabaseTable').innerHTML = Object.keys(users).map(u => `
-            <tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td>
-            <td>${u !== 'admin' ? `<button class="small-btn btn-red" onclick="deleteUser('${u}')">DELETE</button>` : ''}</td></tr>
-        `).join('');
+function returnItem(id) {
+    const item = equipment.find(e => e.id === id);
+    if(item) {
+        const u = item.borrower;
+        const n = item.baseName;
+        item.returnTime = new Date().toLocaleString();
+        item.status = 'Available'; 
+        item.borrower = ''; 
+        item.qrActive = false;
+        logEvent(u, n, "Returned via Scan/Manual");
     }
 }
-
-// BULK LOGIC: Handles Approval, Denial, and Return for many items at once
-function bulkAction(user, itemName, action) {
-    equipment.filter(e => e.borrower === user && e.baseName === itemName).forEach(item => {
-        if(action === 'approve' && item.status === 'Pending') {
-            item.status = 'Borrowed'; item.qrActive = true;
-        } else if(action === 'deny' && item.status === 'Pending') {
-            item.status = 'Available'; item.borrower = ''; item.qrActive = false;
-        } else if(action === 'return' && item.status === 'Borrowed') {
-            item.status = 'Available'; item.borrower = ''; item.qrActive = false;
-        }
-    });
-    save();
-}
-
-function deleteUser(u) { if(confirm('Delete '+u+'?')) { delete users[u]; save(); } }
 
 function requestBulk() {
     document.querySelectorAll('.qty-input').forEach(input => {
@@ -269,24 +285,21 @@ function requestBulk() {
             equipment.filter(e => e.baseName === cat && e.status === 'Available').slice(0, qty).forEach(item => {
                 item.status = 'Pending'; item.borrower = currentUser.username;
             });
+            logEvent(currentUser.username, cat, `Requested ${qty} units`);
         }
     });
-    save(); alert("Request submitted.");
+    alert("Request Sent");
+    renderAll();
 }
 
 function startScanner() {
     document.getElementById('stop-scan-btn').classList.remove('hidden');
     html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-        const id = decodedText.split('|')[1];
-        const item = equipment.find(e => e.id === id);
-        if(item) {
-            item.status = 'Available'; item.borrower = ''; item.qrActive = false;
-            alert("Success: " + id + " returned.");
-            save();
-            stopScanner();
-        }
-    }).catch(err => alert("Camera error: " + err));
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+        const id = text.split('|')[1];
+        returnItem(id);
+        stopScanner();
+    });
 }
 
 function stopScanner() {
@@ -299,7 +312,7 @@ function stopScanner() {
 function addEquipment() {
     const n = document.getElementById('eqName').value;
     const q = parseInt(document.getElementById('eqQty').value);
-    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*100000), baseName: n, status: 'Available', borrower: '', qrActive: false });
+    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*100000), baseName: n, status: 'Available', borrower: '', qrActive: false, borrowTime: '', returnTime: '' });
     save();
 }
 
@@ -311,14 +324,12 @@ function openQR(id, name) {
 }
 
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
-
 function showTab(id, btn) { 
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
 }
-
 function toggleAuth(m) {
     document.getElementById('login-form').classList.add('hidden');
     document.getElementById('signup-form').classList.add('hidden');
