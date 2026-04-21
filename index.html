@@ -96,7 +96,7 @@
 <nav>
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
     <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Tools</button>
-    <button class="tab" onclick="showTab('borrow-section',this)">Borrow</button>
+    <button id="nav-borrow" class="tab" onclick="showTab('borrow-section',this)">Borrow</button>
 </nav>
 
 <div class="container">
@@ -109,12 +109,12 @@
 
         <div class="panel">
             <div style="display:flex; justify-content:space-between; align-items:center">
-                <h3>Equipment Log</h3>
+                <h3>System Notifications</h3>
                 <button id="admin-pending-btn" class="small-btn btn-green hidden" onclick="showTab('admin-section', document.getElementById('nav-admin'))">
                     Pending Requests <span id="pending-count" class="badge">0</span>
                 </button>
             </div>
-            <p id="user-summary-text" style="font-size: 12px; margin-top: 10px; color: #00d9ff;">Loading stats...</p>
+            <p id="status-msg" style="font-size: 12px; margin-top: 10px; color: #00d9ff;">Logged in as: User</p>
         </div>
 
         <div class="panel">
@@ -140,13 +140,29 @@
         </div>
 
         <div class="panel">
+            <h3>Master Borrowing Database</h3>
+            <table id="borrowedLibraryTable">
+                <thead>
+                    <tr>
+                        <th>QR ID</th>
+                        <th>Equipment</th>
+                        <th>User</th>
+                        <th>Borrow Date</th>
+                        <th>Borrow Time</th>
+                    </tr>
+                </thead>
+                <tbody id="libraryBody"></tbody>
+            </table>
+        </div>
+
+        <div class="panel">
             <h3>Return by User</h3>
             <select id="ReturnUser"></select>
             <button class="action btn-green" onclick="processBulkReturn()">RETURN ALL ITEMS FOR THIS USER</button>
         </div>
 
         <div class="panel">
-            <h3>Active Borrowers & Inventory</h3>
+            <h3>Inventory Overview</h3>
             <table id="fullInventoryTable"></table>
         </div>
 
@@ -208,7 +224,11 @@ function handleLogin() {
         currentUser = { ...users[u], username: u };
         document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('display-info').textContent = `${currentUser.name} (@${u})`;
-        document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'admin');
+        document.getElementById('status-msg').textContent = `Welcome, ${currentUser.name}. Check the Activity Log for updates.`;
+        
+        const isAdmin = currentUser.role === 'admin';
+        document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
+        document.getElementById('nav-borrow').classList.toggle('hidden', isAdmin);
         
         if(currentUser.role === 'user') {
             document.getElementById('batch-qr-panel').classList.remove('hidden');
@@ -245,12 +265,6 @@ function generateBatchQR() {
 function renderAll() {
     if(!currentUser) return;
 
-    // Summary Text
-    const userBorrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed').length;
-    const userPending = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Pending').length;
-    document.getElementById('user-summary-text').innerText = `You have ${userBorrowed} items borrowed and ${userPending} pending requests.`;
-
-    // Filtered History
     const filteredHistory = currentUser.role === 'admin' ? historyLog : historyLog.filter(h => h.user === currentUser.username);
     document.getElementById('history-title').innerText = currentUser.role === 'admin' ? "Full System Activity" : "My Activity History";
     document.getElementById('historyBody').innerHTML = filteredHistory.map(h => `<tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>`).join('');
@@ -260,21 +274,23 @@ function renderAll() {
         document.getElementById('admin-pending-btn').classList.remove('hidden');
         document.getElementById('pending-count').innerText = pending.length;
 
-        // Pending Table with Approve/Disapprove
         const pGroup = {};
         pending.forEach(i => { const k = `${i.borrower}|${i.baseName}`; if(!pGroup[k]) pGroup[k] = { u: i.borrower, n: i.baseName, c: 0 }; pGroup[k].c++; });
         document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Action</th></tr></thead><tbody>` +
         Object.values(pGroup).map(g => `<tr><td>${g.n}</td><td>${g.u}</td><td>${g.c}</td><td>
             <button class="small-btn btn-green" onclick="bulkAction('${g.u}', '${g.n}', 'approve')">APPROVE</button>
-            <button class="small-btn btn-red" onclick="bulkAction('${g.u}', '${g.n}', 'disapprove')">REJECT</button>
+            <button class="small-btn btn-red" onclick="bulkAction('${g.u}', '${g.n}', 'disapprove')">DISAPPROVE</button>
         </td></tr>`).join('') + `</tbody>`;
 
-        // Active borrowers
+        const borrowedItems = equipment.filter(e => e.status === 'Borrowed');
+        document.getElementById('libraryBody').innerHTML = borrowedItems.length === 0 ? 
+            `<tr><td colspan="4" style="text-align:center">No records found</td></tr>` :
+            borrowedItems.map(e => `<tr><td>${e.id}</td><td>${e.baseName}</td><td>@${e.borrower}</td><td>${e.borrowTime}</td></tr>`).join('');
+
         const activeBorrowers = [...new Set(equipment.filter(e => e.status === 'Borrowed').map(e => e.borrower))];
         document.getElementById('ReturnUser').innerHTML = `<option value="">-- Select Student --</option>` + 
         activeBorrowers.map(u => `<option value="${u}">${users[u]?.name || u} (@${u})</option>`).join('');
 
-        // Inventory
         const invGroup = {};
         equipment.forEach(e => {
             const k = `${e.baseName}|${e.status}|${e.borrower}`;
@@ -284,7 +300,6 @@ function renderAll() {
         document.getElementById('fullInventoryTable').innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Borrower</th></tr></thead><tbody>` +
         Object.values(invGroup).map(g => `<tr><td>${g.name}</td><td>${g.count}</td><td>${g.status}</td><td style="color:#00ff99">${g.user ? '@'+g.user : '--'}</td></tr>`).join('') + `</tbody>`;
 
-        // Users
         document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>ID #</th><th>Email</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
         Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${users[u].idNumber || '--'}</td><td>${users[u].email || '--'}</td><td>${u}</td><td>${users[u].role}</td><td>
             ${u !== 'admin' ? `<button class="small-btn" onclick="changeRole('${u}', 'admin')">MAKE ADMIN</button><button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` : 'System Root'}
@@ -300,29 +315,27 @@ function renderAll() {
 
 function bulkAction(user, itemName, action) {
     const time = new Date().toLocaleString();
-    const items = equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending');
+    const targets = equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending');
     
     if(action === 'approve') {
-        items.forEach(item => { item.status = 'Borrowed'; item.borrowTime = time; item.returnTime = '--'; });
-        logEvent(user, itemName, "Approved Request");
+        targets.forEach(item => { item.status = 'Borrowed'; item.borrowTime = time; item.returnTime = '--'; });
+        logEvent(user, itemName, "Approved - Item Borrowed");
     } else {
-        items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
-        logEvent(user, itemName, "Rejected Request");
+        targets.forEach(item => { item.status = 'Available'; item.borrower = ''; });
+        logEvent(user, itemName, "Disapproved - Request Cancelled");
     }
     save();
 }
 
 function requestBulk() {
-    let sent = false;
     document.querySelectorAll('.qty-in').forEach(el => {
         const q = parseInt(el.value);
         if(q > 0) {
             equipment.filter(e => e.baseName === el.dataset.cat && e.status === 'Available').slice(0, q).forEach(i => { i.status = 'Pending'; i.borrower = currentUser.username; });
             logEvent(currentUser.username, el.dataset.cat, `Requested ${q}`);
-            sent = true;
         }
     });
-    if(sent) { alert("Request sent."); save(); }
+    alert("Request sent. Please wait for Admin Approval"); save();
 }
 
 function startScanner() {
@@ -334,22 +347,21 @@ function startScanner() {
             const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
             if(items.length > 0) {
                 items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString(); });
-                logEvent(studentUser, `${items.length} Items`, "Batch Return (Scan)");
-                alert("Returned " + items.length + " items for @" + studentUser);
-                stopScanner();
-                save();
+                logEvent(studentUser, `${items.length} Items`, "Return Scanned");
+                alert("Successfully returned items for @" + studentUser);
+                stopScanner(); save();
             }
         }
     });
 }
 
 function processBulkReturn() {
-    const user = document.getElementById('bulkReturnUser').value;
+    const user = document.getElementById('ReturnUser').value;
     if(!user) return alert("Select a user.");
     const items = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
     if(confirm(`Return all items for @${user}?`)) {
         items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString(); });
-        logEvent(user, `${items.length} Items`, "Manual Return");
+        logEvent(user, `${items.length} Items`, "Manual Admin Return");
         save();
     }
 }
@@ -361,9 +373,9 @@ function addEquipment() {
     save();
 }
 
-function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => { document.getElementById('stop-scan-btn').classList.add('hidden'); document.getElementById('reader').innerHTML = ""; }); }
 function changeRole(u, r) { users[u].role = r; save(); }
 function removeUser(u) { if(confirm("Remove "+u+"?")) { delete users[u]; save(); } }
+function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => { document.getElementById('stop-scan-btn').classList.add('hidden'); document.getElementById('reader').innerHTML = ""; }); }
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
 function showTab(id, btn) { 
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
