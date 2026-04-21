@@ -109,12 +109,12 @@
 
         <div class="panel">
             <div style="display:flex; justify-content:space-between; align-items:center">
-                <h3>Current Equipment Log</h3>
+                <h3>Equipment Log</h3>
                 <button id="admin-pending-btn" class="small-btn btn-green hidden" onclick="showTab('admin-section', document.getElementById('nav-admin'))">
                     Pending Requests <span id="pending-count" class="badge">0</span>
                 </button>
             </div>
-            <table id="myItemsTable"></table>
+            <p id="user-summary-text" style="font-size: 12px; margin-top: 10px; color: #00d9ff;">Loading stats...</p>
         </div>
 
         <div class="panel">
@@ -210,11 +210,9 @@ function handleLogin() {
         document.getElementById('display-info').textContent = `${currentUser.name} (@${u})`;
         document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'admin');
         
-        // Show QR panel for students only if they have items
         if(currentUser.role === 'user') {
             document.getElementById('batch-qr-panel').classList.remove('hidden');
         }
-        
         renderAll();
     } else { alert("Invalid Credentials"); }
 }
@@ -226,10 +224,7 @@ function handleSignup() {
     const email = document.getElementById('reg-email').value.trim();
     const p = document.getElementById('reg-p').value.trim();
 
-    if(!u || !n || !idNum || !email || !p) {
-        alert("All fields are required!");
-        return;
-    }
+    if(!u || !n || !idNum || !email || !p) { alert("All fields are required!"); return; }
     if(users[u]) { alert("Username taken!"); return; }
 
     users[u] = { name: n, idNumber: idNum, email: email, password: p, role: "user" };
@@ -241,7 +236,6 @@ function handleSignup() {
 function generateBatchQR() {
     const borrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
     if(borrowed.length === 0) return alert("You have no borrowed items to return.");
-    
     document.getElementById('qr-container').innerHTML = "";
     new QRCode(document.getElementById("qr-container"), { text: `BATCH|${currentUser.username}`, width: 180, height: 180 });
     document.getElementById('qr-text').innerText = "Student: " + currentUser.name + " (" + borrowed.length + " Items)";
@@ -251,44 +245,49 @@ function generateBatchQR() {
 function renderAll() {
     if(!currentUser) return;
 
-    // Table on Dashboard
-    const myItems = equipment.filter(e => e.borrower === currentUser.username);
-    document.getElementById('myItemsTable').innerHTML = `<thead><tr><th>Item</th><th>ID</th><th>Borrowed</th><th>Returned</th><th>Status</th></tr></thead><tbody>` +
-    myItems.map(e => `<tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.borrowTime || '--'}</td><td>${e.returnTime || '--'}</td><td>${e.status}</td></tr>`).join('') + `</tbody>`;
+    // Summary Text
+    const userBorrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed').length;
+    const userPending = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Pending').length;
+    document.getElementById('user-summary-text').innerText = `You have ${userBorrowed} items borrowed and ${userPending} pending requests.`;
 
-    // Filtered History on Dashboard
+    // Filtered History
     const filteredHistory = currentUser.role === 'admin' ? historyLog : historyLog.filter(h => h.user === currentUser.username);
     document.getElementById('history-title').innerText = currentUser.role === 'admin' ? "Full System Activity" : "My Activity History";
     document.getElementById('historyBody').innerHTML = filteredHistory.map(h => `<tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>`).join('');
 
     if(currentUser.role === 'admin') {
-        const pendingCount = equipment.filter(e => e.status === 'Pending').length;
+        const pending = equipment.filter(e => e.status === 'Pending');
         document.getElementById('admin-pending-btn').classList.remove('hidden');
-        document.getElementById('pending-count').innerText = pendingCount;
+        document.getElementById('pending-count').innerText = pending.length;
 
+        // Pending Table with Approve/Disapprove
+        const pGroup = {};
+        pending.forEach(i => { const k = `${i.borrower}|${i.baseName}`; if(!pGroup[k]) pGroup[k] = { u: i.borrower, n: i.baseName, c: 0 }; pGroup[k].c++; });
+        document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Action</th></tr></thead><tbody>` +
+        Object.values(pGroup).map(g => `<tr><td>${g.n}</td><td>${g.u}</td><td>${g.c}</td><td>
+            <button class="small-btn btn-green" onclick="bulkAction('${g.u}', '${g.n}', 'approve')">APPROVE</button>
+            <button class="small-btn btn-red" onclick="bulkAction('${g.u}', '${g.n}', 'disapprove')">REJECT</button>
+        </td></tr>`).join('') + `</tbody>`;
+
+        // Active borrowers
+        const activeBorrowers = [...new Set(equipment.filter(e => e.status === 'Borrowed').map(e => e.borrower))];
+        document.getElementById('ReturnUser').innerHTML = `<option value="">-- Select Student --</option>` + 
+        activeBorrowers.map(u => `<option value="${u}">${users[u]?.name || u} (@${u})</option>`).join('');
+
+        // Inventory
         const invGroup = {};
         equipment.forEach(e => {
             const k = `${e.baseName}|${e.status}|${e.borrower}`;
             if(!invGroup[k]) invGroup[k] = { name: e.baseName, status: e.status, user: e.borrower, count: 0 };
             invGroup[k].count++;
         });
-
         document.getElementById('fullInventoryTable').innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Borrower</th></tr></thead><tbody>` +
         Object.values(invGroup).map(g => `<tr><td>${g.name}</td><td>${g.count}</td><td>${g.status}</td><td style="color:#00ff99">${g.user ? '@'+g.user : '--'}</td></tr>`).join('') + `</tbody>`;
 
-        const activeBorrowers = [...new Set(equipment.filter(e => e.status === 'Borrowed').map(e => e.borrower))];
-        document.getElementById('bulkReturnUser').innerHTML = `<option value="">-- Select Student --</option>` + 
-        activeBorrowers.map(u => `<option value="${u}">${users[u]?.name || u} (@${u})</option>`).join('');
-
-        const pending = equipment.filter(e => e.status === 'Pending');
-        const pGroup = {};
-        pending.forEach(i => { const k = `${i.borrower}|${i.baseName}`; if(!pGroup[k]) pGroup[k] = { u: i.borrower, n: i.baseName, c: 0 }; pGroup[k].c++; });
-        document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Action</th></tr></thead><tbody>` +
-        Object.values(pGroup).map(g => `<tr><td>${g.n}</td><td>${g.u}</td><td>${g.c}</td><td><button class="small-btn btn-green" onclick="bulkAction('${g.u}', '${g.n}', 'approve')">APPROVE</button></td></tr>`).join('') + `</tbody>`;
-
+        // Users
         document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>ID #</th><th>Email</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
         Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${users[u].idNumber || '--'}</td><td>${users[u].email || '--'}</td><td>${u}</td><td>${users[u].role}</td><td>
-            ${u !== 'admin' ? `<button class="small-btn" onclick="changeRole('${u}', 'admin')">MAKE ADMIN</button><button class="small-btn" onclick="changeRole('${u}', 'user')">DEMOTE</button><button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` : 'System Root'}
+            ${u !== 'admin' ? `<button class="small-btn" onclick="changeRole('${u}', 'admin')">MAKE ADMIN</button><button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` : 'System Root'}
         </td></tr>`).join('') + `</tbody>`;
     }
 
@@ -299,6 +298,33 @@ function renderAll() {
     }).join('');
 }
 
+function bulkAction(user, itemName, action) {
+    const time = new Date().toLocaleString();
+    const items = equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending');
+    
+    if(action === 'approve') {
+        items.forEach(item => { item.status = 'Borrowed'; item.borrowTime = time; item.returnTime = '--'; });
+        logEvent(user, itemName, "Approved Request");
+    } else {
+        items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
+        logEvent(user, itemName, "Rejected Request");
+    }
+    save();
+}
+
+function requestBulk() {
+    let sent = false;
+    document.querySelectorAll('.qty-in').forEach(el => {
+        const q = parseInt(el.value);
+        if(q > 0) {
+            equipment.filter(e => e.baseName === el.dataset.cat && e.status === 'Available').slice(0, q).forEach(i => { i.status = 'Pending'; i.borrower = currentUser.username; });
+            logEvent(currentUser.username, el.dataset.cat, `Requested ${q}`);
+            sent = true;
+        }
+    });
+    if(sent) { alert("Request sent."); save(); }
+}
+
 function startScanner() {
     document.getElementById('stop-scan-btn').classList.remove('hidden');
     html5QrCode = new Html5Qrcode("reader");
@@ -307,14 +333,11 @@ function startScanner() {
             const studentUser = txt.split('|')[1];
             const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
             if(items.length > 0) {
-                items.forEach(item => {
-                    item.status = 'Available';
-                    item.borrower = '';
-                    item.returnTime = new Date().toLocaleString();
-                });
+                items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString(); });
                 logEvent(studentUser, `${items.length} Items`, "Batch Return (Scan)");
-                alert("Successfully returned " + items.length + " items for @" + studentUser);
+                alert("Returned " + items.length + " items for @" + studentUser);
                 stopScanner();
+                save();
             }
         }
     });
@@ -323,36 +346,13 @@ function startScanner() {
 function processBulkReturn() {
     const user = document.getElementById('bulkReturnUser').value;
     if(!user) return alert("Select a user.");
-    const borrowedItems = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
+    const items = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
     if(confirm(`Return all items for @${user}?`)) {
-        borrowedItems.forEach(item => { item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString(); });
-        logEvent(user, `${borrowedItems.length} Items`, "Return");
+        items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString(); });
+        logEvent(user, `${items.length} Items`, "Manual Return");
+        save();
     }
 }
-
-function changeRole(u, r) { users[u].role = r; save(); }
-function removeUser(u) { if(confirm("Remove "+u+"?")) { delete users[u]; save(); } }
-
-function bulkAction(user, itemName, action) {
-    const time = new Date().toLocaleString();
-    equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending').forEach(item => {
-        item.status = 'Borrowed'; item.borrowTime = time; item.returnTime = '--';
-    });
-    logEvent(user, itemName, "Approved Request");
-}
-
-function requestBulk() {
-    document.querySelectorAll('.qty-in').forEach(el => {
-        const q = parseInt(el.value);
-        if(q > 0) {
-            equipment.filter(e => e.baseName === el.dataset.cat && e.status === 'Available').slice(0, q).forEach(i => { i.status = 'Pending'; i.borrower = currentUser.username; });
-            logEvent(currentUser.username, el.dataset.cat, `Requested ${q}`);
-        }
-    });
-    alert("Request sent."); save();
-}
-
-function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => { document.getElementById('stop-scan-btn').classList.add('hidden'); document.getElementById('reader').innerHTML = ""; }); }
 
 function addEquipment() {
     const n = document.getElementById('eqName').value;
@@ -361,6 +361,9 @@ function addEquipment() {
     save();
 }
 
+function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => { document.getElementById('stop-scan-btn').classList.add('hidden'); document.getElementById('reader').innerHTML = ""; }); }
+function changeRole(u, r) { users[u].role = r; save(); }
+function removeUser(u) { if(confirm("Remove "+u+"?")) { delete users[u]; save(); } }
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
 function showTab(id, btn) { 
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
