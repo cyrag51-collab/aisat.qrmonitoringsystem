@@ -39,7 +39,7 @@
         th, td { padding: 10px; border: 1px solid #00d9ff22; text-align: left; }
         th { color: #00d9ff; background: #00d9ff08; }
         
-        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; }
+        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; background: #000; }
         #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
     </style>
@@ -112,6 +112,13 @@
             <button class="action" onclick="startScanner()">START CAMERA</button>
             <button id="stop-scan-btn" class="action btn-red hidden" onclick="stopScanner()">STOP CAMERA</button>
         </div>
+        
+        <div class="panel">
+            <h3>Manual Return Fallback</h3>
+            <input type="text" id="manualId" placeholder="Enter EQ ID (e.g. EQ-12345)">
+            <button class="action btn-green" onclick="manualReturn()">CONFIRM RETURN</button>
+        </div>
+
         <div class="panel">
             <h3>Pending Requests</h3>
             <table id="adminRequestTable"></table>
@@ -130,7 +137,7 @@
 
     <section id="borrow-section" class="hidden">
         <div class="panel">
-            <h3>Available for Borrowing</h3>
+            <h3>Available</h3>
             <div id="borrow-list-container"></div>
             <button class="action" onclick="requestBulk()">REQUEST SELECTED</button>
         </div>
@@ -212,7 +219,7 @@ function renderAll() {
     myItems.map(e => `<tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.borrowTime || '--'}</td><td>${e.returnTime || '--'}</td><td>${e.status}</td></tr>`).join('') + `</tbody>`;
 
     const filteredHistory = currentUser.role === 'admin' ? historyLog : historyLog.filter(h => h.user === currentUser.username);
-    document.getElementById('history-title').innerText = currentUser.role === 'admin' ? "Full System Histor" : "My History";
+    document.getElementById('history-title').innerText = currentUser.role === 'admin' ? "Full System History" : "My History";
     document.getElementById('historyBody').innerHTML = filteredHistory.map(h => `<tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>`).join('');
 
     const qrItems = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
@@ -247,6 +254,18 @@ function renderAll() {
     }).join('');
 }
 
+function manualReturn() {
+    const id = document.getElementById('manualId').value.trim();
+    const item = equipment.find(e => e.id === id);
+    if(item && item.status === 'Borrowed') {
+        const oldUser = item.borrower;
+        item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString();
+        logEvent(oldUser, item.baseName, "Returned (Manual)");
+        document.getElementById('manualId').value = "";
+        alert("Item " + id + " returned successfully.");
+    } else { alert("ID not found or item not currently borrowed."); }
+}
+
 function changeRole(u, r) { users[u].role = r; save(); }
 function removeUser(u) { if(confirm("Remove "+u+"?")) { delete users[u]; save(); } }
 
@@ -266,7 +285,7 @@ function requestBulk() {
             logEvent(currentUser.username, el.dataset.cat, `Requested ${q}`);
         }
     });
-    alert("Request sent to Admin. Please wait for Approval"); save();
+    alert("Request sent to Admin.Please wait for Approval"); save();
 }
 
 function startScanner() {
