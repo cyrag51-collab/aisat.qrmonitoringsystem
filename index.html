@@ -70,10 +70,12 @@
         </div>
         <div id="signup-form" class="hidden">
             <h2>NEW ACCOUNT</h2>
-            <input type="text" id="reg-name" placeholder="Full Name">
-            <input type="text" id="reg-u" placeholder="Username">
+            <input type="text" id="reg-name" placeholder="Full Name*">
+            <input type="text" id="reg-id" placeholder="ID Number*">
+            <input type="email" id="reg-email" placeholder="Email Address*">
+            <input type="text" id="reg-u" placeholder="Username*">
             <div class="pass-wrapper">
-                <input type="password" id="reg-p" placeholder="Password">
+                <input type="password" id="reg-p" placeholder="Password*">
                 <button class="toggle-btn" onclick="togglePass('reg-p', this)">SHOW</button>
             </div>
             <button class="action" onclick="handleSignup()">REGISTER</button>
@@ -211,9 +213,27 @@ function handleLogin() {
 
 function handleSignup() {
     const u = document.getElementById('reg-u').value.trim();
-    if(!u) return;
-    users[u] = { name: document.getElementById('reg-name').value, password: document.getElementById('reg-p').value, role: "user" };
-    save(); toggleAuth('login');
+    const n = document.getElementById('reg-name').value.trim();
+    const idNum = document.getElementById('reg-id').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-p').value.trim();
+
+    if(!u || !n || !idNum || !email || !pass) {
+        return alert("Please fill in all required fields.");
+    }
+    
+    if(users[u]) return alert("Username already exists.");
+
+    users[u] = { 
+        name: n, 
+        idNumber: idNum,
+        email: email,
+        password: pass, 
+        role: "user" 
+    };
+    save(); 
+    alert("Account created successfully.");
+    toggleAuth('login');
 }
 
 function renderAll() {
@@ -269,7 +289,7 @@ function renderAll() {
 }
 
 function processBulkReturn() {
-    const user = document.getElementById('Return').value;
+    const user = document.getElementById('bulkReturnUser').value;
     if(!user) return alert("Select a user.");
     
     const borrowedItems = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
