@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AISAT College -Dasmariñas — QR Code Based Tools Monitoring System</title>
+    <title>AISAT COLLEGE DASMA — QR Code Based Tools Monitoring System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -16,7 +16,7 @@
         .login-box { width: 380px; padding: 40px; border: 1px solid #00d9ff; background: #061d31; box-shadow: 0 0 20px rgba(0, 217, 255, 0.2); text-align: center; border-radius: 8px; }
 
         header { padding: 20px 30px; border-bottom: 1px solid #00d9ff33; display: flex; justify-content: space-between; align-items: center; background: #061d31; }
-        .logo h1 { font-size: 24px; color: #00d9ff; }
+        .logo h1 { font-size: 18px; color: #00d9ff; letter-spacing: 1px; }
 
         nav { display: flex; gap: 10px; padding: 15px 30px; border-bottom: 1px solid #00d9ff33; background: #02111f; position: sticky; top: 0; z-index: 100; }
         nav button { background: transparent; border: 1px solid #00d9ff55; color: #00d9ff; padding: 8px 15px; cursor: pointer; font-family: inherit; }
@@ -48,7 +48,7 @@
 <body>
 
 <div id="qr-modal">
-    <h2 style="color: #00ff99; margin-bottom: 15px;">QR PASS</h2>
+    <h2 style="color: #00ff99; margin-bottom: 15px;">RETURN PASS</h2>
     <div id="qr-container"></div>
     <p id="qr-text" style="color: #00d9ff; font-size: 11px; margin-bottom: 20px;"></p>
     <button class="small-btn btn-red" onclick="closeQR()">CLOSE</button>
@@ -57,7 +57,8 @@
 <div id="login-overlay">
     <div class="login-box">
         <div id="login-form">
-            <h2>SYSTEM LOGIN</h2>
+            <h2 style="color:#00d9ff; font-size: 20px;">AISAT COLLEGE DASMA</h2>
+            <p style="font-size:10px; margin-bottom:20px; color:#888;">QR Code Based Tools Monitoring System</p>
             <input type="text" id="login-user" placeholder="Username">
             <div class="pass-wrapper">
                 <input type="password" id="login-pass" placeholder="Password">
@@ -70,7 +71,7 @@
             </div>
         </div>
         <div id="signup-form" class="hidden">
-            <h2>NEW ACCOUNT</h2>
+            <h2 style="font-size: 18px;">CREATE ACCOUNT</h2>
             <input type="text" id="reg-name" placeholder="Full Name*">
             <input type="text" id="reg-id" placeholder="ID Number*">
             <input type="email" id="reg-email" placeholder="Email Address*">
@@ -86,7 +87,7 @@
 </div>
 
 <header>
-    <div class="logo"><h1>AISAT</h1></div>
+    <div class="logo"><h1>AISAT COLLEGE DASMA</h1></div>
     <div>
         <span id="display-info" style="color: #00ff99; font-size: 12px; margin-right: 10px;"></span>
         <button onclick="location.reload()" class="small-btn btn-red">LOGOUT</button>
@@ -114,7 +115,7 @@
                     Pending Requests <span id="pending-count" class="badge">0</span>
                 </button>
             </div>
-            <p id="status-msg" style="font-size: 12px; margin-top: 10px; color: #00d9ff;">Logged in as: User</p>
+            <p id="status-msg" style="font-size: 12px; margin-top: 10px; color: #00d9ff;">Status: Initializing...</p>
         </div>
 
         <div class="panel">
@@ -189,7 +190,7 @@
 
 <script>
 let users = JSON.parse(localStorage.getItem('aisat_users')) || {
-    "admin": { password: "Admin123", role: "admin", name: "System Admin", idNumber: "000", email: "admin@aisat.edu" }
+    "admin": { password: "admin", role: "admin", name: "System Admin", idNumber: "000", email: "admin@aisat.edu" }
 };
 let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [];
 let historyLog = JSON.parse(localStorage.getItem('aisat_history')) || [];
@@ -223,7 +224,7 @@ function handleLogin() {
         currentUser = { ...users[u], username: u };
         document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('display-info').textContent = `${currentUser.name} (@${u})`;
-        document.getElementById('status-msg').textContent = `Welcome, ${currentUser.name}. Check the Activity Log for updates.`;
+        document.getElementById('status-msg').textContent = `Authenticated as: ${currentUser.name}`;
         
         const isAdmin = currentUser.role === 'admin';
         document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
@@ -243,18 +244,18 @@ function handleSignup() {
     const email = document.getElementById('reg-email').value.trim();
     const p = document.getElementById('reg-p').value.trim();
 
-    if(!u || !n || !idNum || !email || !p) { alert("All fields are required!"); return; }
-    if(users[u]) { alert("Username taken!"); return; }
+    if(!u || !n || !idNum || !email || !p) { alert("Fields required!"); return; }
+    if(users[u]) { alert("Username exists!"); return; }
 
     users[u] = { name: n, idNumber: idNum, email: email, password: p, role: "user" };
     save(); 
-    alert("Account Created!");
+    alert("Registration Successful.");
     toggleAuth('login');
 }
 
 function generateBatchQR() {
     const borrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
-    if(borrowed.length === 0) return alert("You have no borrowed items to return.");
+    if(borrowed.length === 0) return alert("No active borrowed items.");
     document.getElementById('qr-container').innerHTML = "";
     new QRCode(document.getElementById("qr-container"), { text: `BATCH|${currentUser.username}`, width: 180, height: 180 });
     document.getElementById('qr-text').innerText = "Student: " + currentUser.name + " (" + borrowed.length + " Items)";
@@ -265,12 +266,11 @@ function renderAll() {
     if(!currentUser) return;
 
     const filteredHistory = currentUser.role === 'admin' ? historyLog : historyLog.filter(h => h.user === currentUser.username);
-    document.getElementById('history-title').innerText = currentUser.role === 'admin' ? "Full System Activity" : "My Activity History";
     document.getElementById('historyBody').innerHTML = filteredHistory.map(h => `<tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>`).join('');
 
     if(currentUser.role === 'admin') {
         const pending = equipment.filter(e => e.status === 'Pending');
-        document.getElementById('admin-pending-btn').classList.remove('hidden');
+        document.getElementById('admin-pending-btn').classList.toggle('hidden', pending.length === 0);
         document.getElementById('pending-count').innerText = pending.length;
 
         const pGroup = {};
@@ -282,9 +282,7 @@ function renderAll() {
         </td></tr>`).join('') + `</tbody>`;
 
         const borrowedItems = equipment.filter(e => e.status === 'Borrowed');
-        document.getElementById('libraryBody').innerHTML = borrowedItems.length === 0 ? 
-            `<tr><td colspan="4" style="text-align:center">No records found</td></tr>` :
-            borrowedItems.map(e => `<tr><td>${e.id}</td><td>${e.baseName}</td><td>@${e.borrower}</td><td>${e.borrowTime}</td></tr>`).join('');
+        document.getElementById('libraryBody').innerHTML = borrowedItems.map(e => `<tr><td>${e.id}</td><td>${e.baseName}</td><td>@${e.borrower}</td><td>${e.borrowTime}</td></tr>`).join('');
 
         const activeBorrowers = [...new Set(equipment.filter(e => e.status === 'Borrowed').map(e => e.borrower))];
         document.getElementById('ReturnUser').innerHTML = `<option value="">-- Select Student --</option>` + 
@@ -299,9 +297,9 @@ function renderAll() {
         document.getElementById('fullInventoryTable').innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Borrower</th></tr></thead><tbody>` +
         Object.values(invGroup).map(g => `<tr><td>${g.name}</td><td>${g.count}</td><td>${g.status}</td><td style="color:#00ff99">${g.user ? '@'+g.user : '--'}</td></tr>`).join('') + `</tbody>`;
 
-        document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>ID #</th><th>Email</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
-        Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${users[u].idNumber || '--'}</td><td>${users[u].email || '--'}</td><td>${u}</td><td>${users[u].role}</td><td>
-            ${u !== 'admin' ? `<button class="small-btn" onclick="changeRole('${u}', 'admin')">MAKE ADMIN</button><button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` : 'System Root'}
+        document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
+        Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td><td>
+            ${u !== 'admin' ? `<button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` : 'Root'}
         </td></tr>`).join('') + `</tbody>`;
     }
 
@@ -315,13 +313,12 @@ function renderAll() {
 function bulkAction(user, itemName, action) {
     const time = new Date().toLocaleString();
     const targets = equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending');
-    
     if(action === 'approve') {
-        targets.forEach(item => { item.status = 'Borrowed'; item.borrowTime = time; item.returnTime = '--'; });
-        logEvent(user, itemName, "Approved - Item Borrowed");
+        targets.forEach(item => { item.status = 'Borrowed'; item.borrowTime = time; });
+        logEvent(user, itemName, "Approved Request");
     } else {
         targets.forEach(item => { item.status = 'Available'; item.borrower = ''; });
-        logEvent(user, itemName, "Disapproved - Request Cancelled");
+        logEvent(user, itemName, "Disapproved Request");
     }
     save();
 }
@@ -331,10 +328,10 @@ function requestBulk() {
         const q = parseInt(el.value);
         if(q > 0) {
             equipment.filter(e => e.baseName === el.dataset.cat && e.status === 'Available').slice(0, q).forEach(i => { i.status = 'Pending'; i.borrower = currentUser.username; });
-            logEvent(currentUser.username, el.dataset.cat, `Requested ${q}`);
+            logEvent(currentUser.username, el.dataset.cat, `Requested ${q} units`);
         }
     });
-    alert("Request sent. Please wait for Admin Approval"); save();
+    alert("Request submitted for approval."); save();
 }
 
 function startScanner() {
@@ -345,9 +342,9 @@ function startScanner() {
             const studentUser = txt.split('|')[1];
             const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
             if(items.length > 0) {
-                items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString(); });
-                logEvent(studentUser, `${items.length} Items`, "Return Scanned");
-                alert("Successfully returned items for @" + studentUser);
+                items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
+                logEvent(studentUser, `${items.length} Items`, "QR Return Success");
+                alert("Successfully returned all items.");
                 stopScanner(); save();
             }
         }
@@ -356,24 +353,22 @@ function startScanner() {
 
 function processBulkReturn() {
     const user = document.getElementById('ReturnUser').value;
-    if(!user) return alert("Select a user.");
+    if(!user) return;
     const items = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
-    if(confirm(`Return all items for @${user}?`)) {
-        items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString(); });
-        logEvent(user, `${items.length} Items`, "Manual Admin Return");
-        save();
-    }
+    items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
+    logEvent(user, `${items.length} Items`, "Manual Return");
+    save();
 }
 
 function addEquipment() {
     const n = document.getElementById('eqName').value;
     const q = parseInt(document.getElementById('eqQty').value);
-    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*100000), baseName: n, status: 'Available', borrower: '', borrowTime: '', returnTime: '' });
+    if(!n || isNaN(q)) return;
+    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*100000), baseName: n, status: 'Available', borrower: '', borrowTime: '' });
     save();
 }
 
-function changeRole(u, r) { users[u].role = r; save(); }
-function removeUser(u) { if(confirm("Remove "+u+"?")) { delete users[u]; save(); } }
+function removeUser(u) { if(confirm("Remove user?")) { delete users[u]; save(); } }
 function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => { document.getElementById('stop-scan-btn').classList.add('hidden'); document.getElementById('reader').innerHTML = ""; }); }
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
 function showTab(id, btn) { 
