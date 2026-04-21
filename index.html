@@ -234,10 +234,16 @@ function renderAll() {
         </div>
     `).join('') || 'No Active Qr.';
 
-    // Admin Tools
     if(currentUser.role === 'admin') {
-        document.getElementById('fullInventoryTable').innerHTML = `<thead><tr><th>Item</th><th>ID</th><th>Status</th><th>Borrower</th></tr></thead><tbody>` +
-        equipment.map(e => `<tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.status}</td><td style="color:#00ff99">${e.borrower ? '@'+e.borrower : '--'}</td></tr>`).join('') + `</tbody>`;
+        const invGroup = {};
+        equipment.forEach(e => {
+            const k = `${e.baseName}|${e.status}|${e.borrower}`;
+            if(!invGroup[k]) invGroup[k] = { name: e.baseName, status: e.status, user: e.borrower, count: 0 };
+            invGroup[k].count++;
+        });
+
+        document.getElementById('fullInventoryTable').innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Borrower</th></tr></thead><tbody>` +
+        Object.values(invGroup).map(g => `<tr><td>${g.name}</td><td>${g.count}</td><td>${g.status}</td><td style="color:#00ff99">${g.user ? '@'+g.user : '--'}</td></tr>`).join('') + `</tbody>`;
 
         const activeBorrowers = [...new Set(equipment.filter(e => e.status === 'Borrowed').map(e => e.borrower))];
         document.getElementById('bulkReturnUser').innerHTML = `<option value="">-- Select Student --</option>` + 
@@ -263,7 +269,7 @@ function renderAll() {
 }
 
 function processBulkReturn() {
-    const user = document.getElementById('Return User').value;
+    const user = document.getElementById('bulkReturnUser').value;
     if(!user) return alert("Select a user first.");
     
     const borrowedItems = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
@@ -275,7 +281,7 @@ function processBulkReturn() {
             item.borrower = '';
             item.returnTime = new Date().toLocaleString();
         });
-        logEvent(user, `${itemCount} Items`, "Return Processed");
+        logEvent(user, `${itemCount} Items`, "Bulk Return Processed");
         alert("Returned " + itemCount + " items.");
     }
 }
@@ -299,7 +305,7 @@ function requestBulk() {
             logEvent(currentUser.username, el.dataset.cat, `Requested ${q}`);
         }
     });
-    alert("Request sent to Admin. Please wait for Approval."); save();
+    alert("Request sent to Admin. Please wait Admin Approval."); save();
 }
 
 function startScanner() {
