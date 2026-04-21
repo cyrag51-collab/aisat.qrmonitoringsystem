@@ -1,68 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AISAT College — QR Equipment Monitoring System</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AISAT College — QR Equipment Monitoring System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{ font-family:Consolas,monospace; background:#02111f; color:#bfc3d8; overflow-x:hidden; }
-body::before{ content:""; position:fixed; inset:0; background: linear-gradient(rgba(0,255,255,.05) 1px,transparent 1px), linear-gradient(90deg,rgba(0,255,255,.05) 1px,transparent 1px); background-size:40px 40px; z-index:-1; }
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Consolas, monospace; background: #02111f; color: #bfc3d8; overflow-x: hidden; }
+        body::before { content: ""; position: fixed; inset: 0; background: linear-gradient(rgba(0,255,255,.05) 1px,transparent 1px), linear-gradient(90deg,rgba(0,255,255,.05) 1px,transparent 1px); background-size: 40px 40px; z-index: -1; }
 
-#login-overlay { position: fixed; inset: 0; background: #2e3a46; display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.login-box { width: 380px; padding: 40px; border: 1px solid #509eac; background: #1c588d; box-shadow: 0 0 20px rgba(0, 217, 255, 0.2); text-align: center; }
+        #login-overlay { position: fixed; inset: 0; background: #02111f; display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-box { width: 380px; padding: 40px; border: 1px solid #00d9ff; background: #061d31; box-shadow: 0 0 20px rgba(0, 217, 255, 0.2); text-align: center; border-radius: 8px; }
 
-header{ padding:20px 30px; border-bottom:1px solid #5d9faa55; display:flex; justify-content:space-between; align-items:center; }
-.logo { display: flex; align-items: center; gap: 15px; }
-.logo img { height: 60px; width: auto; filter: drop-shadow(0 0 5px rgba(80, 120, 128, 0.5)); }
-.logo h1 { font-size: 28px; line-height: 1; }
-.logo p { font-size: 12px; letter-spacing: 1px; }
+        header { padding: 20px 30px; border-bottom: 1px solid #00d9ff33; display: flex; justify-content: space-between; align-items: center; background: #061d31; }
+        .logo { display: flex; align-items: center; gap: 15px; }
+        .logo img { height: 60px; width: auto; }
+        .logo h1 { font-size: 24px; color: #00d9ff; }
+        .logo p { font-size: 11px; letter-spacing: 1px; }
 
-nav{ display:flex; gap:20px; padding:15px 30px; border-bottom:1px solid #00d9ff33; }
-nav button{ background:transparent; border:1px solid #00d9ff55; color:#00d9ff; padding:10px 18px; cursor:pointer; font-family: inherit;}
-nav button.active{ background:#00d9ff22; border-color: #00d9ff; }
+        nav { display: flex; gap: 10px; padding: 15px 30px; border-bottom: 1px solid #00d9ff33; background: #02111f; position: sticky; top: 0; z-index: 100; }
+        nav button { background: transparent; border: 1px solid #00d9ff55; color: #00d9ff; padding: 8px 15px; cursor: pointer; font-family: inherit; transition: 0.3s; }
+        nav button.active { background: #00d9ff22; border-color: #00d9ff; }
 
-.container{padding:30px;}
-.hidden{display:none}
-.cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; margin-bottom:30px; }
-.card,.panel{ border:1px solid #00d9ff55; padding:25px; border-radius:12px; background:#061d31aa; margin-bottom: 25px;}
-input,select{ width:100%; padding:12px; margin:8px 0; background:#001a2a; color:#00d9ff; border:1px solid #00d9ff55; font-family: inherit;}
-button.action{ background:#00d9ff22; color:#00d9ff; border:1px solid #00d9ff; padding:12px 20px; cursor:pointer; margin-top: 5px; width: 100%; font-family: inherit;}
-.logout-btn { background: transparent; border: 1px solid #cf3030; color: #ff4444; padding: 5px 10px; cursor: pointer; font-family: inherit;}
+        .container { padding: 30px; }
+        .hidden { display: none !important; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card, .panel { border: 1px solid #00d9ff33; padding: 20px; border-radius: 8px; background: #061d31aa; }
+        
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #001a2a; color: #00d9ff; border: 1px solid #00d9ff55; font-family: inherit; }
+        button.action { background: #00d9ff; color: #02111f; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .logout-btn { background: transparent; border: 1px solid #ff4444; color: #ff4444; padding: 5px 12px; cursor: pointer; }
 
-table{ width:100%; border-collapse:collapse; margin-top:20px; }
-th,td{ padding:12px; border:1px solid #00d9ff33; font-size: 11px; text-align: left;}
-.notif-badge { background: #ff4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-left: 5px; }
-.notif-item { padding: 15px; background: #001a2a; margin-bottom: 8px; border-left: 3px solid #00ff99; font-size: 12px; }
-.qty-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #00d9ff22; }
-.qty-input { width: 60px !important; margin: 0 !important; text-align: center; }
-.pass-wrapper { position: relative; width: 100%; }
-.toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 10px; color: #00d9ffaa; background: none; border: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        th, td { padding: 12px; border: 1px solid #00d9ff22; text-align: left; }
+        th { background: #00d9ff11; color: #00d9ff; }
 
-.btn-approve { background: #00ff9922; color: #00ff99; border: 1px solid #00ff99; padding: 4px 8px; cursor: pointer; font-size: 10px; margin-right: 5px;}
-.btn-disapprove { background: #ff444422; color: #ff4444; border: 1px solid #ff4444; padding: 4px 8px; cursor: pointer; font-size: 10px;}
-
-.btn-db-admin { background: #00ff9922; color: #00ff99; border: 1px solid #00ff99; padding: 4px 8px; cursor: pointer; font-size: 10px; }
-.btn-db-remove { background: #ff444422; color: #ff4444; border: 1px solid #ff4444; padding: 4px 8px; cursor: pointer; font-size: 10px; }
-
-#qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.98); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; text-align: center;}
-#qr-container { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-.qr-view-btn { background: #00ff99; color: #02111f; border: none; padding: 6px 12px; cursor: pointer; font-size: 11px; font-weight: bold; border-radius: 4px; margin-top: 10px; display: block;}
-#reader { width: 100%; max-width: 500px; border: 1px solid #00d9ff; margin: 10px auto; background: #000; overflow: hidden; }
-
-.btn-stop { background: rgba(207, 48, 48, 0.2) !important; color: #ff4444 !important; border: 1px solid #cf3030 !important; }
-</style>
+        #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
+        #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        #reader { width: 100%; max-width: 400px; border: 2px solid #00d9ff; margin: 15px auto; }
+    </style>
 </head>
 <body>
 
 <div id="qr-modal">
-    <h2 id="qr-header" style="color: #00ff99; margin-bottom: 10px;">BORROWER'S PASS</h2>
+    <h2 id="qr-header" style="color: #00ff99; margin-bottom: 15px;">BORROWER'S PASS</h2>
     <div id="qr-container"></div>
-    <p id="qr-text" style="color: #00d9ff; font-size: 10px; margin-bottom: 20px; max-width: 300px;"></p>
-    <button class="logout-btn" onclick="closeQR()" style="width: 150px; font-weight: bold;">CLOSE</button>
+    <p id="qr-text" style="color: #00d9ff; font-size: 11px; margin-bottom: 20px;"></p>
+    <button class="logout-btn" onclick="closeQR()">CLOSE PASS</button>
 </div>
 
 <div id="login-overlay">
@@ -70,52 +57,45 @@ th,td{ padding:12px; border:1px solid #00d9ff33; font-size: 11px; text-align: le
         <div id="login-form">
             <h2>SYSTEM LOGIN</h2>
             <input type="text" id="username" placeholder="Username">
-            <div class="pass-wrapper">
-                <input type="password" id="password" placeholder="Password">
-                <button type="button" class="toggle-btn" onclick="togglePass('password')">SHOW</button>
-            </div>
+            <input type="password" id="password" placeholder="Password">
             <button class="action" onclick="handleLogin()">ACCESS SYSTEM</button>
             <p style="font-size: 11px; margin-top: 15px;">
-                <a href="#" onclick="toggleAuth('forgot')" style="color:#00d9ff;">Forgot Password?</a> | 
+                <a href="#" onclick="toggleAuth('forgot')" style="color:#00d9ff;">Forgot?</a> | 
                 <a href="#" onclick="toggleAuth('signup')" style="color:#00d9ff;">Sign Up</a>
             </p>
         </div>
+        
         <div id="forgot-form" class="hidden">
             <h2>RECOVERY</h2>
-            <input type="email" id="forgot-email" placeholder="Registered Email">
-            <button class="action" onclick="handleForgot()">SEND TO EMAIL</button>
-            <p style="font-size: 11px; margin-top: 10px;"><a href="#" onclick="toggleAuth('login')" style="color:#00d9ff;">Back</a></p>
+            <p style="font-size: 12px; margin-bottom: 10px;">Enter your email to reset</p>
+            <input type="email" id="forgot-email" placeholder="Email Address">
+            <button class="action" onclick="handleForgot()">SEND RESET LINK</button>
+            <button class="action" style="background:transparent; color:#00d9ff; border:1px solid #00d9ff" onclick="toggleAuth('login')">BACK</button>
         </div>
+
         <div id="signup-form" class="hidden">
-            <h2>SIGN UP</h2>
+            <h2>NEW ACCOUNT</h2>
             <input type="text" id="reg-name" placeholder="Full Name">
             <input type="text" id="reg-id" placeholder="ID Number">
-            <input type="email" id="reg-email" placeholder="Email Address">
             <input type="text" id="reg-user" placeholder="Username">
-            <div class="pass-wrapper">
-                <input type="password" id="reg-pass" placeholder="Password">
-                <button type="button" class="toggle-btn" onclick="togglePass('reg-pass')">SHOW</button>
-            </div>
-            <button class="action" onclick="handleSignup()">CREATE ACCOUNT</button>
-            <p style="font-size: 11px; margin-top: 10px;"><a href="#" onclick="toggleAuth('login')" style="color:#00d9ff;">Back</a></p>
+            <input type="password" id="reg-pass" placeholder="Password">
+            <button class="action" onclick="handleSignup()">CREATE</button>
+            <button class="action" style="background:transparent; color:#00d9ff; border:1px solid #00d9ff" onclick="toggleAuth('login')">BACK</button>
         </div>
     </div>
 </div>
 
 <header>
     <div class="logo">
-        <img src="images-removebg-preview.png" alt="AISAT Logo" onerror="this.style.display='none'">
+        <img src="images-removebg-preview.png" alt="AISAT" onerror="this.style.display='none'">
         <div>
             <h1>AISAT COLLEGE</h1>
             <p>Equipment Monitoring System</p>
         </div>
     </div>
-    <div style="display: flex; align-items: center; gap: 15px;">
-        <div style="text-align: right;">
-            <div id="display-name" style="font-size: 14px; font-weight: bold; color: #00ff99;"></div>
-            <div id="display-role" style="font-size: 10px; color: #00d9ff;"></div>
-        </div>
-        <button class="logout-btn" onclick="location.reload()">LOGOUT</button>
+    <div id="user-info" style="text-align: right;">
+        <span id="display-name" style="color: #00ff99; font-weight: bold; display: block;"></span>
+        <button class="logout-btn" onclick="location.reload()" style="font-size: 10px; margin-top: 5px;">LOGOUT</button>
     </div>
 </header>
 
@@ -123,27 +103,20 @@ th,td{ padding:12px; border:1px solid #00d9ff33; font-size: 11px; text-align: le
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
     <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Tools</button>
     <button class="tab" onclick="showTab('borrow-section',this)">Borrow Items</button>
-    <button class="tab" onclick="showTab('notif-section',this)">Alerts <span id="notif-count" class="hidden notif-badge">0</span></button>
+    <button class="tab" onclick="showTab('notif-section',this)">Alerts</button>
 </nav>
 
 <div class="container">
     <section id="dashboard">
         <div class="cards">
-            <div class="card"><h2 id="totalEquip">0</h2><p>Total Items</p></div>
-            <div id="pending-card" class="card"><h2 id="pending-stat" style="color:#e0cc7c">0</h2><p>Pending Requests</p></div>
+            <div class="card"><h2 id="totalEquip">0</h2><p>Total Inventory</p></div>
+            <div class="card"><h2 id="pending-stat" style="color:#ffd700">0</h2><p>Pending Requests</p></div>
         </div>
-        
         <div id="admin-log-panel" class="panel hidden">
-            <h3>System Monitoring Log</h3>
+            <h3>Recent Activity</h3>
             <table>
                 <thead>
-                    <tr>
-                        <th>Item Name (Qty)</th>
-                        <th>Borrowed By</th>
-                        <th>Date Approved</th>
-                        <th>Date Returned</th>
-                        <th>Status</th>
-                    </tr>
+                    <tr><th>Item</th><th>User</th><th>Status</th><th>Time</th></tr>
                 </thead>
                 <tbody id="activityBody"></tbody>
             </table>
@@ -152,69 +125,29 @@ th,td{ padding:12px; border:1px solid #00d9ff33; font-size: 11px; text-align: le
 
     <section id="admin-section" class="hidden">
         <div class="panel">
-            <h3>User Management Database</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Username</th>
-                        <th>Role</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="userTableBody"></tbody>
-            </table>
-        </div>
-
-        <div class="panel">
-            <h3>Pending Requests</h3>
-            <table>
-                <thead><tr><th>Item Name</th><th>Borrower</th><th>Qty</th><th>Action</th></tr></thead>
-                <tbody id="pendingRequestsTable"></tbody>
-            </table>
-        </div>
-
-        <div class="panel">
-            <h3>QR Return Scanner</h3>
-            <button class="action" onclick="initScanner()" id="start-scan-btn">START SCANNER</button>
-            <button class="action btn-stop hidden" onclick="stopScanner()" id="stop-scan-btn">STOP SCANNER</button>
+            <h3>QR Scanner (Return Items)</h3>
             <div id="reader"></div>
-            <p id="scanner-result" style="margin-top:10px; text-align:center; font-size:12px; color:#00ff99;"></p>
+            <button class="action" onclick="initScanner()">START CAMERA</button>
         </div>
-
         <div class="panel">
-            <h3>Manage Return Items (Manual)</h3>
-            <table>
-                <thead><tr><th>Item Name</th><th>Borrower</th><th>Qty</th><th>Action</th></tr></thead>
-                <tbody id="returnTableBody"></tbody>
-            </table>
-        </div>
-
-        <div class="panel">
-            <h3>Inventory Management</h3>
-            <div style="display: flex; gap: 10px;">
-                <input id="eqName" placeholder="Item Name" style="flex: 2;">
-                <input type="number" id="eqQty" placeholder="Qty" style="flex: 0.5;">
-                <button class="action" onclick="addEquipment()" style="flex: 1; margin:8px 0;">Add Items</button>
-            </div>
-            <table>
-                <thead><tr><th>Item</th><th>Total Units</th><th>Available</th><th>Action</th></tr></thead>
-                <tbody id="equipmentTable"></tbody>
-            </table>
+            <h3>Add New Equipment</h3>
+            <input id="eqName" placeholder="Item Name">
+            <input type="number" id="eqQty" placeholder="Quantity">
+            <button class="action" onclick="addEquipment()">UPDATE INVENTORY</button>
         </div>
     </section>
 
     <section id="borrow-section" class="hidden">
         <div class="panel">
-            <h3>Borrow Items</h3>
+            <h3>Request Items</h3>
             <div id="borrow-list-container"></div>
-            <button class="action" onclick="requestBulk()">Submit Request</button>
+            <button class="action" onclick="requestBulk()">SUBMIT REQUEST</button>
         </div>
     </section>
 
     <section id="notif-section" class="hidden">
         <div class="panel">
-            <h3>System Alerts</h3>
+            <h3>Notifications</h3>
             <div id="notif-list"></div>
         </div>
     </section>
@@ -222,17 +155,12 @@ th,td{ padding:12px; border:1px solid #00d9ff33; font-size: 11px; text-align: le
 
 <script>
 let users = JSON.parse(localStorage.getItem('aisat_users')) || {
-    "admin": { password: "Admin123", role: "admin", name: "System Admin", idNum: "MASTER-001", email: "admin@aisat.edu" }
+    "admin": { password: "Admin123", role: "admin", name: "System Admin", idNum: "MASTER-001" }
 };
 let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [];
 let notifications = JSON.parse(localStorage.getItem('aisat_notifs')) || [];
 let currentUser = null;
 let html5QrCode = null;
-
-function togglePass(id) {
-    const input = document.getElementById(id);
-    input.type = input.type === "password" ? "text" : "password";
-}
 
 function handleLogin() {
     const u = document.getElementById('username').value.trim();
@@ -241,274 +169,87 @@ function handleLogin() {
         currentUser = { ...users[u], username: u };
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('display-name').textContent = currentUser.name.toUpperCase();
-        document.getElementById('display-role').textContent = `[ ${currentUser.role.toUpperCase()} ]`;
         document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'admin');
         document.getElementById('admin-log-panel').classList.toggle('hidden', currentUser.role !== 'admin');
         renderAll();
-    } else { alert("Invalid Credentials."); }
+    } else { alert("Access Denied: Invalid Credentials"); }
+}
+
+function handleSignup() {
+    const u = document.getElementById('reg-user').value;
+    if(!u) return alert("Username required");
+    users[u] = {
+        name: document.getElementById('reg-name').value,
+        idNum: document.getElementById('reg-id').value,
+        password: document.getElementById('reg-pass').value,
+        role: "user"
+    };
+    localStorage.setItem('aisat_users', JSON.stringify(users));
+    alert("Account Created!");
+    toggleAuth('login');
+}
+
+function handleForgot() {
+    const email = document.getElementById('forgot-email').value;
+    if(email) {
+        alert("Recovery link sent to: " + email);
+        toggleAuth('login');
+    } else {
+        alert("Please enter a valid email.");
+    }
 }
 
 function initScanner() {
-    const startBtn = document.getElementById('start-scan-btn');
-    const stopBtn = document.getElementById('stop-scan-btn');
-    startBtn.classList.add('hidden');
-    stopBtn.classList.remove('hidden');
     html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-        processReturnQR(decodedText);
-        stopScanner();
-    }).catch(err => { alert("Camera error"); stopScanner(); });
-}
-
-function stopScanner() {
-    if (html5QrCode) {
-        html5QrCode.stop().then(() => {
-            document.getElementById('start-scan-btn').classList.remove('hidden');
-            document.getElementById('stop-scan-btn').classList.add('hidden');
-            document.getElementById('reader').innerHTML = ""; 
-        });
-    }
-}
-
-function processReturnQR(data) {
-    if(!data.startsWith("AISAT-PASS")) { document.getElementById('scanner-result').innerText = "INVALID QR"; return; }
-    const parts = data.split('|');
-    const user = parts.find(p => p.startsWith("USER:")).split(':')[1];
-    const item = parts.find(p => p.startsWith("ITEM:")).split(':')[1];
-    const qty = parseInt(parts.find(p => p.startsWith("QTY:")).split(':')[1]);
-    const userKey = Object.keys(users).find(k => users[k].name === user);
-    manualReturn(userKey, item, qty);
-}
-
-function manualReturn(userKey, itemName, qty) {
-    const itemsToReturn = equipment.filter(e => e.borrower === userKey && e.baseName === itemName && e.status === 'Borrowed').slice(0, qty);
-    if(itemsToReturn.length > 0) {
-        const timeNow = new Date().toLocaleString();
-        const batchId = Date.now();
-        itemsToReturn.forEach(item => {
-            item.status = 'Available';
-            item.borrower = '';
-            item.returnTime = timeNow;
-            item.logTimestamp = batchId; 
-        });
-
-        alert(`SUCCESS: Returned ${itemsToReturn.length} ${itemName}`);
-        save();
-    } else { alert("Already returned or invalid."); }
-}
-
-function openQR(data) {
-    document.getElementById('qr-container').innerHTML = "";
-    const parts = data.split('|');
-    const userName = parts.find(p => p.startsWith("USER:")).split(':')[1];
-    const itemName = parts.find(p => p.startsWith("ITEM:")).split(':')[1];
-    const userKey = Object.keys(users).find(k => users[k].name === userName);
-    
-    const stillBorrowed = equipment.some(e => e.borrower === userKey && e.baseName === itemName && e.status === 'Borrowed');
-
-    if (!stillBorrowed) {
-        document.getElementById('qr-header').innerText = "QR EXPIRED (RETURNED)";
-        document.getElementById('qr-header').style.color = "#ff4444";
-        document.getElementById('qr-container').innerHTML = "<h1 style='color:red; font-size:50px;'>X</h1>";
-        document.getElementById('qr-text').innerText = "This pass has expired because the items were already returned.";
-    } else {
-        document.getElementById('qr-header').innerText = "BORROWER'S PASS";
-        document.getElementById('qr-header').style.color = "#00ff99";
-        new QRCode(document.getElementById("qr-container"), { text: data, width: 200, height: 200 });
-        document.getElementById('qr-text').innerText = data.replace(/\|/g, " | ");
-    }
-    document.getElementById('qr-modal').style.display = 'flex';
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+        alert("Scanned: " + text);
+        html5QrCode.stop();
+    }).catch(err => alert("Camera Error"));
 }
 
 function renderAll() {
-    if(!currentUser) return;
-    const pendingCount = equipment.filter(e => e.status === 'Pending').length;
     document.getElementById('totalEquip').textContent = equipment.length;
-    document.getElementById('pending-stat').textContent = pendingCount;
-
-    if(currentUser.role === 'admin') {
-        document.getElementById('userTableBody').innerHTML = Object.keys(users).map(u => {
-            const userObj = users[u];
-            const isAdmin = userObj.role === 'admin';
-            return `<tr>
-                <td>${userObj.name}</td>
-                <td>${u}</td>
-                <td style="color:${isAdmin?'#00ff99':'#bfc3d8'}">${userObj.role.toUpperCase()}</td>
-                <td>
-                    <div style="display:flex; gap:5px;">
-                        ${isAdmin ? 
-                            `<button class="btn-db-admin" onclick="setUserRole('${u}', 'user')">DEMOTE</button>` : 
-                            `<button class="btn-db-admin" onclick="setUserRole('${u}', 'admin')">MAKE ADMIN</button>`
-                        }
-                        <button class="btn-db-remove" onclick="deleteUser('${u}')">REMOVE</button>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
-
-        const cats = [...new Set(equipment.map(e => e.baseName))];
-        document.getElementById('equipmentTable').innerHTML = cats.map(cat => {
-            const total = equipment.filter(e => e.baseName === cat).length;
-            const avail = equipment.filter(e => e.baseName === cat && e.status === 'Available').length;
-            return `<tr><td>${cat}</td><td>${total}</td><td>${avail}</td><td><button onclick="editStock('${cat}')">EDIT</button></td></tr>`;
-        }).join('');
-
-        // Grouping logic for Monitoring Log (Latest to Oldest)
-        const logMap = {};
-        equipment.filter(e => e.status === 'Borrowed' || e.returnTime).forEach(e => {
-            const groupKey = `${e.borrower}_${e.baseName}_${e.logTimestamp}`;
-            if(!logMap[groupKey]) {
-                logMap[groupKey] = { ...e, qty: 0 };
-            }
-            logMap[groupKey].qty++;
-        });
-
-        const loggedItems = Object.values(logMap)
-            .sort((a, b) => (b.logTimestamp || 0) - (a.logTimestamp || 0))
-            .slice(0, 50);
-
-        document.getElementById('activityBody').innerHTML = loggedItems.map(e => `
-            <tr>
-                <td>${e.baseName} (${e.qty})</td>
-                <td>${users[e.borrower]?.name || 'N/A'}</td>
-                <td>${e.approveTime || '---'}</td>
-                <td>${e.returnTime || '<span style="color:#e0cc7c">Pending Return</span>'}</td>
-                <td><span style="color:${e.status==='Available'?'#00ff99':'#00d9ff'}">${e.status.toUpperCase()}</span></td>
-            </tr>
-        `).join('');
-
-        const pendingItems = equipment.filter(e => e.status === 'Pending');
-        const pendingGrouped = {};
-        pendingItems.forEach(item => {
-            const key = `${item.borrower}_${item.baseName}`;
-            if (!pendingGrouped[key]) pendingGrouped[key] = { borrower: item.borrower, baseName: item.baseName, count: 0 };
-            pendingGrouped[key].count++;
-        });
-        document.getElementById('pendingRequestsTable').innerHTML = Object.values(pendingGrouped).map(req => `
-            <tr><td>${req.baseName}</td><td>${users[req.borrower]?.name}</td><td>${req.count}</td><td>
-                <button class="btn-approve" onclick="approveBulk('${req.borrower}', '${req.baseName}')">APPROVE</button>
-                <button class="btn-disapprove" onclick="disapproveBulk('${req.borrower}', '${req.baseName}')">DISAPPROVE</button>
-            </td></tr>
-        `).join('');
-
-        const borrowedItems = equipment.filter(e => e.status === 'Borrowed');
-        const borrowedGrouped = {};
-        borrowedItems.forEach(item => {
-            const key = `${item.borrower}_${item.baseName}`;
-            if (!borrowedGrouped[key]) borrowedGrouped[key] = { borrower: item.borrower, baseName: item.baseName, count: 0 };
-            borrowedGrouped[key].count++;
-        });
-        document.getElementById('returnTableBody').innerHTML = Object.values(borrowedGrouped).map(req => `
-            <tr><td>${req.baseName}</td><td>${users[req.borrower]?.name}</td><td>${req.count}</td><td><button onclick="manualReturn('${req.borrower}', '${req.baseName}', ${req.count})">RETURN</button></td></tr>
-        `).join('');
-    }
-
-    const borrowCats = [...new Set(equipment.map(e => e.baseName))];
-    document.getElementById('borrow-list-container').innerHTML = borrowCats.map(cat => {
+    document.getElementById('pending-stat').textContent = equipment.filter(e => e.status === 'Pending').length;
+ 
+    const cats = [...new Set(equipment.map(e => e.baseName))];
+    document.getElementById('borrow-list-container').innerHTML = cats.map(cat => {
         const avail = equipment.filter(e => e.baseName === cat && e.status === 'Available').length;
-        return `<div class="qty-row"><span>${cat} (${avail})</span><input type="number" class="qty-input" data-cat="${cat}" min="0" max="${avail}" value="0"></div>`;
+        return `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #222">
+                    <span>${cat}</span>
+                    <span>Available: ${avail} <input type="number" class="qty-input" data-cat="${cat}" min="0" max="${avail}" style="width:50px"></span>
+                </div>`;
     }).join('');
-
-    const myNotifs = notifications.filter(n => n.target === currentUser.username || (currentUser.role === 'admin' && n.target === 'admin'))
-        .reverse()
-        .slice(0, 50);
-
-    document.getElementById('notif-list').innerHTML = myNotifs.map(n => `
-        <div class="notif-item"><strong>${n.title}</strong>: ${n.msg} <br><small>${n.time}</small>
-        ${n.qrData ? `<button class="qr-view-btn" onclick="openQR('${n.qrData}')">VIEW PASS</button>` : ''}</div>
-    `).join('');
 }
 
-function setUserRole(u, role) {
-    if(u === 'admin') return alert("Master Admin cannot be demoted.");
-    users[u].role = role;
-    localStorage.setItem('aisat_users', JSON.stringify(users));
+function addEquipment() {
+    const name = document.getElementById('eqName').value;
+    const qty = parseInt(document.getElementById('eqQty').value) || 0;
+    for(let i=0; i<qty; i++) {
+        equipment.push({ id: Date.now()+Math.random(), baseName: name, status: 'Available', borrower: '' });
+    }
+    save();
+}
+
+function save() {
+    localStorage.setItem('aisat_equip', JSON.stringify(equipment));
+    localStorage.setItem('aisat_notifs', JSON.stringify(notifications));
     renderAll();
 }
 
-function deleteUser(u) {
-    if(u === 'admin') return alert("Master Admin cannot be removed.");
-    if(confirm(`Delete user ${u}? Active borrows will be reset.`)) {
-        equipment.forEach(item => { if(item.borrower === u) { item.borrower = ''; item.status = 'Available'; }});
-        delete users[u];
-        localStorage.setItem('aisat_users', JSON.stringify(users));
-        save();
-    }
+function showTab(id, btn) {
+    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
 }
 
-function approveBulk(borrower, baseName) { 
-    const targets = equipment.filter(e => e.borrower === borrower && e.baseName === baseName && e.status === 'Pending');
-    const t = new Date().toLocaleString();
-    const batchId = Date.now();
-    const qrData = `AISAT-PASS|USER:${users[borrower].name}|ID:${users[borrower].idNum}|ITEM:${baseName}|QTY:${targets.length}|DATE:${t}`;
-    targets.forEach(item => { 
-        item.status = 'Borrowed'; 
-        item.approveTime = t; 
-        item.returnTime = null;
-        item.logTimestamp = batchId; 
-    });
-    pushNotif({ target: borrower, title: "APPROVED", msg: `Ready: ${baseName}`, time: t, qrData: qrData });
-    save(); 
-}
-
-function disapproveBulk(borrower, baseName) {
-    const targets = equipment.filter(e => e.borrower === borrower && e.baseName === baseName && e.status === 'Pending');
-    targets.forEach(item => { item.status = 'Available'; item.borrower = ''; });
-    pushNotif({ target: borrower, title: "DISAPPROVED", msg: `Your request for ${baseName} was declined.`, time: new Date().toLocaleString() });
-    save();
-}
-
-function pushNotif(notifObj) {
-    notifications.push(notifObj);
-    if (notifications.length > 300) { 
-        notifications.shift();
-    }
-}
-
-function addEquipment() { 
-    const name = document.getElementById('eqName').value, qty = parseInt(document.getElementById('eqQty').value) || 1;
-    if(!name) return;
-    for(let i=0; i<qty; i++) { equipment.push({ id: Date.now()+Math.random(), baseName: name, status: 'Available', borrower: '' }); } 
-    save(); document.getElementById('eqName').value = ""; document.getElementById('eqQty').value = ""; 
-}
-
-function editStock(cat) {
-    const newName = prompt("Edit Item Name:", cat);
-    if (!newName) return;
-    const newQty = parseInt(prompt("Set Total Units for this item type:"));
-    if (isNaN(newQty)) return;
-
-    let active = equipment.filter(e => e.baseName === cat && (e.status === 'Borrowed' || e.status === 'Pending'));
-    if (newQty < active.length) return alert("Cannot reduce below active borrows (" + active.length + ").");
-
-    equipment = equipment.filter(e => e.baseName !== cat);
-    active.forEach(i => { i.baseName = newName; equipment.push(i); });
-    for(let i=0; i < (newQty - active.length); i++) {
-        equipment.push({ id: Date.now()+Math.random(), baseName: newName, status: 'Available', borrower: '' });
-    }
-    save();
-}
-
-function requestBulk() {
-    const inputs = document.querySelectorAll('.qty-input');
-    inputs.forEach(input => {
-        const qty = parseInt(input.value);
-        if (qty > 0) {
-            equipment.filter(e => e.baseName === input.getAttribute('data-cat') && e.status === 'Available').slice(0, qty).forEach(unit => {
-                unit.status = 'Pending'; unit.borrower = currentUser.username;
-            });
-        }
-    });
-    pushNotif({ target: 'admin', title: "NEW REQUEST", msg: `${currentUser.name} requested items.`, time: new Date().toLocaleString() }); 
-    save(); alert("Sent."); 
+function toggleAuth(m) {
+    ['login-form','signup-form','forgot-form'].forEach(f => document.getElementById(f).classList.add('hidden'));
+    document.getElementById(m+'-form').classList.remove('hidden');
 }
 
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
-function showTab(id, btn) { document.querySelectorAll('section').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); }
-function save() { localStorage.setItem('aisat_equip', JSON.stringify(equipment)); localStorage.setItem('aisat_notifs', JSON.stringify(notifications)); renderAll(); }
-function handleSignup() { users[document.getElementById('reg-user').value] = { name: document.getElementById('reg-name').value, idNum: document.getElementById('reg-id').value, password: document.getElementById('reg-pass').value, role: "user" }; localStorage.setItem('aisat_users', JSON.stringify(users)); toggleAuth('login'); }
-function toggleAuth(m) { ['login-form','signup-form','forgot-form'].forEach(f => document.getElementById(f).classList.add('hidden')); document.getElementById(m+'-form').classList.remove('hidden'); }
 </script>
+
 </body>
 </html>
-
