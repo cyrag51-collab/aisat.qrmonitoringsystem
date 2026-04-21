@@ -117,7 +117,6 @@
         
         <div class="panel">
             <h3>Bulk Return by User</h3>
-            <p style="font-size: 11px; margin-bottom: 5px;">Select a user to return ALL their items instantly.</p>
             <select id="bulkReturnUser"></select>
             <button class="action btn-green" onclick="processBulkReturn()">RETURN ALL ITEMS FOR THIS USER</button>
         </div>
@@ -172,7 +171,7 @@
 
 <script>
 let users = JSON.parse(localStorage.getItem('aisat_users')) || {
-    "admin": { password: "Admin123", role: "admin", name: "System Admin" }
+    "admin": { password: "Admin123", role: "admin", name: "System Admin", idNumber: "000", email: "admin@aisat.edu" }
 };
 let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [];
 let historyLog = JSON.parse(localStorage.getItem('aisat_history')) || [];
@@ -216,23 +215,17 @@ function handleSignup() {
     const n = document.getElementById('reg-name').value.trim();
     const idNum = document.getElementById('reg-id').value.trim();
     const email = document.getElementById('reg-email').value.trim();
-    const pass = document.getElementById('reg-p').value.trim();
+    const p = document.getElementById('reg-p').value.trim();
 
-    if(!u || !n || !idNum || !email || !pass) {
-        return alert("Please fill in all required fields.");
+    if(!u || !n || !idNum || !email || !p) {
+        alert("All fields are required!");
+        return;
     }
-    
-    if(users[u]) return alert("Username already exists.");
+    if(users[u]) { alert("Username taken!"); return; }
 
-    users[u] = { 
-        name: n, 
-        idNumber: idNum,
-        email: email,
-        password: pass, 
-        role: "user" 
-    };
+    users[u] = { name: n, idNumber: idNum, email: email, password: p, role: "user" };
     save(); 
-    alert("Account created successfully.");
+    alert("Account Created!");
     toggleAuth('login');
 }
 
@@ -275,8 +268,9 @@ function renderAll() {
         document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Action</th></tr></thead><tbody>` +
         Object.values(pGroup).map(g => `<tr><td>${g.n}</td><td>${g.u}</td><td>${g.c}</td><td><button class="small-btn btn-green" onclick="bulkAction('${g.u}', '${g.n}', 'approve')">APPROVE</button></td></tr>`).join('') + `</tbody>`;
 
-        document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
-        Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td><td>
+        // Updated User Management Table with ID and Email
+        document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>ID #</th><th>Email</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
+        Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${users[u].idNumber || '--'}</td><td>${users[u].email || '--'}</td><td>${u}</td><td>${users[u].role}</td><td>
             ${u !== 'admin' ? `<button class="small-btn" onclick="changeRole('${u}', 'admin')">MAKE ADMIN</button><button class="small-btn" onclick="changeRole('${u}', 'user')">DEMOTE</button><button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` : 'System Root'}
         </td></tr>`).join('') + `</tbody>`;
     }
@@ -291,18 +285,10 @@ function renderAll() {
 function processBulkReturn() {
     const user = document.getElementById('bulkReturnUser').value;
     if(!user) return alert("Select a user.");
-    
     const borrowedItems = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
-    const itemCount = borrowedItems.length;
-
-    if(confirm(`Return all ${itemCount} items for @${user}?`)) {
-        borrowedItems.forEach(item => {
-            item.status = 'Available';
-            item.borrower = '';
-            item.returnTime = new Date().toLocaleString();
-        });
-        logEvent(user, `${itemCount} Items`, "Return Processed");
-        alert("Returned " + itemCount + " items.");
+    if(confirm(`Return all items for @${user}?`)) {
+        borrowedItems.forEach(item => { item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString(); });
+        logEvent(user, `${borrowedItems.length} Items`, "Bulk Return");
     }
 }
 
@@ -314,7 +300,7 @@ function bulkAction(user, itemName, action) {
     equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending').forEach(item => {
         item.status = 'Borrowed'; item.borrowTime = time; item.returnTime = '--';
     });
-    logEvent(user, itemName, "Approved Requests");
+    logEvent(user, itemName, "Approved");
 }
 
 function requestBulk() {
@@ -325,7 +311,7 @@ function requestBulk() {
             logEvent(currentUser.username, el.dataset.cat, `Requested ${q}`);
         }
     });
-    alert("Request sent to Admin. Please wait Admin Approval."); save();
+    alert("Request sent."); save();
 }
 
 function startScanner() {
