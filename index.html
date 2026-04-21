@@ -42,6 +42,7 @@
         #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; background: #000; }
         #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .badge { background: #ff4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -96,14 +97,32 @@
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
     <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Tools</button>
     <button class="tab" onclick="showTab('borrow-section',this)">Borrow</button>
-    <button class="tab" onclick="showTab('notif-section',this)">Alerts</button>
 </nav>
 
 <div class="container">
     <section id="dashboard">
+        <div id="batch-qr-panel" class="panel hidden">
+            <h3 style="color:#00ff99">Return QR</h3>
+            <p style="font-size:11px; margin-bottom:10px">Show this to Admin to return borrowed items.</p>
+            <button class="action btn-green" onclick="generateBatchQR()">GENERATE RETURN PASS</button>
+        </div>
+
         <div class="panel">
-            <h3>My Equipment Log</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center">
+                <h3>Current Equipment Log</h3>
+                <button id="admin-pending-btn" class="small-btn btn-green hidden" onclick="showTab('admin-section', document.getElementById('nav-admin'))">
+                    Pending Requests <span id="pending-count" class="badge">0</span>
+                </button>
+            </div>
             <table id="myItemsTable"></table>
+        </div>
+
+        <div class="panel">
+            <h3 id="history-title">Activity Log</h3>
+            <table>
+                <thead><tr><th>Time</th><th>User</th><th>Item</th><th>Event</th></tr></thead>
+                <tbody id="historyBody"></tbody>
+            </table>
         </div>
     </section>
 
@@ -116,19 +135,19 @@
         </div>
         
         <div class="panel">
-            <h3>Bulk Return by User</h3>
-            <select id="bulkReturnUser"></select>
+            <h3>Pending Requests</h3>
+            <table id="adminRequestTable"></table>
+        </div>
+
+        <div class="panel">
+            <h3>Return by User</h3>
+            <select id="ReturnUser"></select>
             <button class="action btn-green" onclick="processBulkReturn()">RETURN ALL ITEMS FOR THIS USER</button>
         </div>
 
         <div class="panel">
             <h3>Active Borrowers & Inventory</h3>
             <table id="fullInventoryTable"></table>
-        </div>
-
-        <div class="panel">
-            <h3>Pending Requests</h3>
-            <table id="adminRequestTable"></table>
         </div>
 
         <div class="panel">
@@ -149,22 +168,6 @@
             <h3>Available for Borrowing</h3>
             <div id="borrow-list-container"></div>
             <button class="action" onclick="requestBulk()">REQUEST SELECTED</button>
-        </div>
-    </section>
-
-    <section id="notif-section" class="hidden">
-        <div id="student-qr-area">
-            <div class="panel">
-                <h3>Your Active QR Passes</h3>
-                <div id="notif-list"></div>
-            </div>
-        </div>
-        <div class="panel">
-            <h3 id="history-title">Activity Log</h3>
-            <table>
-                <thead><tr><th>Time</th><th>User</th><th>Item</th><th>Event</th></tr></thead>
-                <tbody id="historyBody"></tbody>
-            </table>
         </div>
     </section>
 </div>
@@ -206,6 +209,12 @@ function handleLogin() {
         document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('display-info').textContent = `${currentUser.name} (@${u})`;
         document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'admin');
+        
+        // Show QR panel for students only if they have items
+        if(currentUser.role === 'user') {
+            document.getElementById('batch-qr-panel').classList.remove('hidden');
+        }
+        
         renderAll();
     } else { alert("Invalid Credentials"); }
 }
@@ -229,25 +238,34 @@ function handleSignup() {
     toggleAuth('login');
 }
 
+function generateBatchQR() {
+    const borrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
+    if(borrowed.length === 0) return alert("You have no borrowed items to return.");
+    
+    document.getElementById('qr-container').innerHTML = "";
+    new QRCode(document.getElementById("qr-container"), { text: `BATCH|${currentUser.username}`, width: 180, height: 180 });
+    document.getElementById('qr-text').innerText = "Student: " + currentUser.name + " (" + borrowed.length + " Items)";
+    document.getElementById('qr-modal').style.display = 'flex';
+}
+
 function renderAll() {
     if(!currentUser) return;
 
+    // Table on Dashboard
     const myItems = equipment.filter(e => e.borrower === currentUser.username);
     document.getElementById('myItemsTable').innerHTML = `<thead><tr><th>Item</th><th>ID</th><th>Borrowed</th><th>Returned</th><th>Status</th></tr></thead><tbody>` +
     myItems.map(e => `<tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.borrowTime || '--'}</td><td>${e.returnTime || '--'}</td><td>${e.status}</td></tr>`).join('') + `</tbody>`;
 
+    // Filtered History on Dashboard
     const filteredHistory = currentUser.role === 'admin' ? historyLog : historyLog.filter(h => h.user === currentUser.username);
-    document.getElementById('history-title').innerText = currentUser.role === 'admin' ? "Full System History" : "History";
+    document.getElementById('history-title').innerText = currentUser.role === 'admin' ? "Full System Activity" : "My Activity History";
     document.getElementById('historyBody').innerHTML = filteredHistory.map(h => `<tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>`).join('');
 
-    const qrItems = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
-    document.getElementById('notif-list').innerHTML = qrItems.map(e => `
-        <div style="padding:10px; border:1px solid #00d9ff33; margin-bottom:5px; border-radius:4px;">
-            <span>${e.baseName}</span> <button class="small-btn btn-green" onclick="openQR('${e.id}','${e.baseName}')">SHOW QR</button>
-        </div>
-    `).join('') || 'No Active Qr.';
-
     if(currentUser.role === 'admin') {
+        const pendingCount = equipment.filter(e => e.status === 'Pending').length;
+        document.getElementById('admin-pending-btn').classList.remove('hidden');
+        document.getElementById('pending-count').innerText = pendingCount;
+
         const invGroup = {};
         equipment.forEach(e => {
             const k = `${e.baseName}|${e.status}|${e.borrower}`;
@@ -268,7 +286,6 @@ function renderAll() {
         document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Action</th></tr></thead><tbody>` +
         Object.values(pGroup).map(g => `<tr><td>${g.n}</td><td>${g.u}</td><td>${g.c}</td><td><button class="small-btn btn-green" onclick="bulkAction('${g.u}', '${g.n}', 'approve')">APPROVE</button></td></tr>`).join('') + `</tbody>`;
 
-        // Updated User Management Table with ID and Email
         document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>ID #</th><th>Email</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
         Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${users[u].idNumber || '--'}</td><td>${users[u].email || '--'}</td><td>${u}</td><td>${users[u].role}</td><td>
             ${u !== 'admin' ? `<button class="small-btn" onclick="changeRole('${u}', 'admin')">MAKE ADMIN</button><button class="small-btn" onclick="changeRole('${u}', 'user')">DEMOTE</button><button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` : 'System Root'}
@@ -282,13 +299,34 @@ function renderAll() {
     }).join('');
 }
 
+function startScanner() {
+    document.getElementById('stop-scan-btn').classList.remove('hidden');
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+        if(txt.startsWith('BATCH|')) {
+            const studentUser = txt.split('|')[1];
+            const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
+            if(items.length > 0) {
+                items.forEach(item => {
+                    item.status = 'Available';
+                    item.borrower = '';
+                    item.returnTime = new Date().toLocaleString();
+                });
+                logEvent(studentUser, `${items.length} Items`, "Batch Return (Scan)");
+                alert("Successfully returned " + items.length + " items for @" + studentUser);
+                stopScanner();
+            }
+        }
+    });
+}
+
 function processBulkReturn() {
     const user = document.getElementById('bulkReturnUser').value;
     if(!user) return alert("Select a user.");
     const borrowedItems = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
     if(confirm(`Return all items for @${user}?`)) {
         borrowedItems.forEach(item => { item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString(); });
-        logEvent(user, `${borrowedItems.length} Items`, "Bulk Return");
+        logEvent(user, `${borrowedItems.length} Items`, "Return");
     }
 }
 
@@ -300,7 +338,7 @@ function bulkAction(user, itemName, action) {
     equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending').forEach(item => {
         item.status = 'Borrowed'; item.borrowTime = time; item.returnTime = '--';
     });
-    logEvent(user, itemName, "Approved");
+    logEvent(user, itemName, "Approved Request");
 }
 
 function requestBulk() {
@@ -314,20 +352,6 @@ function requestBulk() {
     alert("Request sent."); save();
 }
 
-function startScanner() {
-    document.getElementById('stop-scan-btn').classList.remove('hidden');
-    html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-        const id = txt.split('|')[1];
-        const item = equipment.find(e => e.id === id);
-        if(item) {
-            const oldUser = item.borrower;
-            item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString();
-            logEvent(oldUser, item.baseName, "Returned (Scan)"); stopScanner();
-        }
-    });
-}
-
 function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => { document.getElementById('stop-scan-btn').classList.add('hidden'); document.getElementById('reader').innerHTML = ""; }); }
 
 function addEquipment() {
@@ -335,13 +359,6 @@ function addEquipment() {
     const q = parseInt(document.getElementById('eqQty').value);
     for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*100000), baseName: n, status: 'Available', borrower: '', borrowTime: '', returnTime: '' });
     save();
-}
-
-function openQR(id, name) {
-    document.getElementById('qr-container').innerHTML = "";
-    new QRCode(document.getElementById("qr-container"), { text: `AISAT|${id}`, width: 180, height: 180 });
-    document.getElementById('qr-text').innerText = name + " ID: " + id;
-    document.getElementById('qr-modal').style.display = 'flex';
 }
 
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
