@@ -26,18 +26,20 @@
         .hidden { display: none !important; }
         .panel { border: 1px solid #00d9ff33; padding: 20px; border-radius: 8px; background: #061d31aa; margin-bottom: 20px; }
         
+        .pass-container { position: relative; width: 100%; }
+        .toggle-pass { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #00d9ff; font-size: 10px; cursor: pointer; }
+
         input { width: 100%; padding: 12px; margin: 8px 0; background: #001a2a; color: #00d9ff; border: 1px solid #00d9ff55; font-family: inherit; }
-        
         button.action { background: #00d9ff; color: #02111f; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 5px; }
-        button.small-btn { padding: 6px 10px; font-size: 11px; cursor: pointer; background: #00d9ff22; color: #00d9ff; border: 1px solid #00d9ff55; margin-right: 5px; }
+        button.small-btn { padding: 6px 10px; font-size: 11px; cursor: pointer; background: #00d9ff22; color: #00d9ff; border: 1px solid #00d9ff55; }
         .btn-red { color: #ff4444; border-color: #ff444455; }
         .btn-green { color: #00ff99; border-color: #00ff9955; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
         th, td { padding: 10px; border: 1px solid #00d9ff22; text-align: left; }
         th { color: #00d9ff; background: #00d9ff08; }
-
-        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; }
+        
+        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; background: #000; }
         #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
     </style>
@@ -56,7 +58,10 @@
         <div id="login-form">
             <h2>SYSTEM LOGIN</h2>
             <input type="text" id="username" placeholder="Username">
-            <input type="password" id="password" placeholder="Password">
+            <div class="pass-container">
+                <input type="password" id="password" placeholder="Password">
+                <button class="toggle-pass" onclick="togglePass('password')">SHOW</button>
+            </div>
             <button class="action" onclick="handleLogin()">ACCESS SYSTEM</button>
             <div style="margin-top: 15px; font-size: 11px;">
                 <a href="#" onclick="alert('Contact IT Support.')" style="color:#ffcc00; text-decoration: none; margin-right: 10px;">Forgot Password?</a>
@@ -67,7 +72,10 @@
             <h2>NEW ACCOUNT</h2>
             <input type="text" id="reg-name" placeholder="Full Name">
             <input type="text" id="reg-user" placeholder="Username">
-            <input type="password" id="reg-pass" placeholder="Password">
+            <div class="pass-container">
+                <input type="password" id="reg-pass" placeholder="Password">
+                <button class="toggle-pass" onclick="togglePass('reg-pass')">SHOW</button>
+            </div>
             <button class="action" onclick="handleSignup()">REGISTER</button>
             <button class="action" style="background:transparent; color:#00d9ff; margin-top:10px" onclick="toggleAuth('login')">BACK</button>
         </div>
@@ -76,7 +84,7 @@
 
 <header>
     <div class="logo"><h1>AISAT</h1></div>
-    <div style="text-align: right;">
+    <div>
         <span id="display-info" style="color: #00ff99; font-size: 12px; margin-right: 10px;"></span>
         <button onclick="location.reload()" class="small-btn btn-red">LOGOUT</button>
     </div>
@@ -92,11 +100,9 @@
 <div class="container">
     <section id="dashboard">
         <div class="panel">
-            <h3>My Inventory (Current & History)</h3>
+            <h3>My Inventory</h3>
             <table>
-                <thead>
-                    <tr><th>Item Name</th><th>ID</th><th>Borrowed At</th><th>Returned At</th><th>Status</th></tr>
-                </thead>
+                <thead><tr><th>Item</th><th>ID</th><th>Borrowed</th><th>Returned</th><th>Status</th></tr></thead>
                 <tbody id="myItemsTable"></tbody>
             </table>
         </div>
@@ -109,17 +115,14 @@
             <button class="action" onclick="startScanner()">START CAMERA</button>
             <button id="stop-scan-btn" class="action btn-red hidden" onclick="stopScanner()">STOP CAMERA</button>
         </div>
-
         <div class="panel">
             <h3>Pending Requests</h3>
             <table id="adminRequestTable"></table>
         </div>
-
         <div class="panel">
             <h3>User Database</h3>
             <table id="userDatabaseTable"></table>
         </div>
-
         <div class="panel">
             <h3>Stock Management</h3>
             <input id="eqName" placeholder="Item Name">
@@ -142,9 +145,9 @@
             <div id="notif-list"></div>
         </div>
         <div class="panel">
-            <h3>System History (Last 50 Entries)</h3>
-            <table id="historyTable">
-                <thead><tr><th>Time</th><th>User</th><th>Item</th><th>Event</th></tr></thead>
+            <h3>System History</h3>
+            <table>
+                <thead><tr><th>Time</th><th>User</th><th>Item</th><th>Log</th></tr></thead>
                 <tbody id="historyBody"></tbody>
             </table>
         </div>
@@ -152,21 +155,24 @@
 </div>
 
 <script>
-// --- DB ---
 let users = JSON.parse(localStorage.getItem('aisat_users')) || {
     "admin": { password: "Admin123", role: "admin", name: "System Admin" }
 };
 let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [];
 let historyLog = JSON.parse(localStorage.getItem('aisat_history')) || [];
-
 let currentUser = null;
 let html5QrCode = null;
 
 function save() {
     localStorage.setItem('aisat_users', JSON.stringify(users));
     localStorage.setItem('aisat_equip', JSON.stringify(equipment));
-    localStorage.setItem('aisat_history', JSON.stringify(historyLog.slice(0, 50))); // Keep 50
+    localStorage.setItem('aisat_history', JSON.stringify(historyLog));
     renderAll();
+}
+
+function togglePass(id) {
+    const field = document.getElementById(id);
+    field.type = field.type === "password" ? "text" : "password";
 }
 
 function logEvent(user, item, event) {
@@ -176,7 +182,6 @@ function logEvent(user, item, event) {
     save();
 }
 
-// --- AUTH ---
 function handleLogin() {
     const u = document.getElementById('username').value.trim();
     const p = document.getElementById('password').value.trim();
@@ -186,43 +191,33 @@ function handleLogin() {
         document.getElementById('display-info').textContent = `${currentUser.name} (@${u})`;
         document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'admin');
         renderAll();
-    } else { alert("Login failed."); }
+    } else { alert("Error: Access Denied"); }
 }
 
 function handleSignup() {
     const u = document.getElementById('reg-user').value.trim();
+    if(!u) return;
     users[u] = { name: document.getElementById('reg-name').value, password: document.getElementById('reg-pass').value, role: "user" };
     save(); toggleAuth('login');
 }
 
-// --- RENDER ---
 function renderAll() {
     if(!currentUser) return;
 
-    // Dashboard: My Items + Timestamps
     const myItems = equipment.filter(e => e.borrower === currentUser.username);
     document.getElementById('myItemsTable').innerHTML = myItems.map(e => `
-        <tr>
-            <td>${e.baseName}</td>
-            <td>${e.id}</td>
-            <td style="color:#00ff99">${e.borrowTime || '--'}</td>
-            <td style="color:#ff4444">${e.returnTime || '--'}</td>
-            <td>${e.status}</td>
-        </tr>
-    `).join('') || '<tr><td colspan="5">No active items.</td></tr>';
+        <tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.borrowTime || '--'}</td><td>${e.returnTime || '--'}</td><td>${e.status}</td></tr>
+    `).join('') || 'No records.';
 
-    // Alerts (Passes)
-    const qrItems = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed' && e.qrActive);
+    const qrItems = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
     document.getElementById('notif-list').innerHTML = qrItems.map(e => `
         <div class="panel"><strong>${e.baseName}</strong> (ID: ${e.id})<br><button class="action" onclick="openQR('${e.id}','${e.baseName}')">SHOW QR</button></div>
-    `).join('') || 'No pending QR codes.';
+    `).join('') || 'No active qr.';
 
-    // History Log (50 Entries)
     document.getElementById('historyBody').innerHTML = historyLog.map(h => `
         <tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>
     `).join('');
 
-    // Admin Tools
     if(currentUser.role === 'admin') {
         const pending = equipment.filter(e => e.status === 'Pending');
         const grouped = {};
@@ -231,17 +226,17 @@ function renderAll() {
             if(!grouped[key]) grouped[key] = { user: item.borrower, item: item.baseName, count: 0 };
             grouped[key].count++;
         });
-        document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Actions</th></tr></thead><tbody>` + 
+
+        document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Action</th></tr></thead>` + 
         Object.values(grouped).map(g => `
             <tr><td>${g.item}</td><td>${g.user}</td><td>${g.count}</td>
-            <td><button class="small-btn btn-green" onclick="bulkAction('${g.user}', '${g.item}', 'approve')">APPROVE</button></td></tr>
-        `).join('') + `</tbody>`;
+            <td><button class="small-btn btn-green" onclick="bulkAction('${g.user}', '${g.item}', 'approve')">APPROVE ALL</button></td></tr>
+        `).join('') || 'No pending requests.';
 
-        document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>User</th><th>Role</th></tr></thead><tbody>` +
-        Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td></tr>`).join('') + `</tbody>`;
+        document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>User</th><th>Role</th></tr></thead>` +
+        Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td></tr>`).join('');
     }
 
-    // Borrow List
     const cats = [...new Set(equipment.map(e => e.baseName))];
     document.getElementById('borrow-list-container').innerHTML = cats.map(cat => {
         const avail = equipment.filter(e => e.baseName === cat && e.status === 'Available').length;
@@ -252,28 +247,24 @@ function renderAll() {
     }).join('');
 }
 
-// --- ACTIONS ---
 function bulkAction(user, itemName, action) {
     const time = new Date().toLocaleString();
     equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending').forEach(item => {
         item.status = 'Borrowed'; 
-        item.qrActive = true;
         item.borrowTime = time;
         item.returnTime = '--';
     });
-    logEvent(user, itemName, "Bulk Approval");
+    logEvent(user, itemName, "Approved");
 }
 
 function returnItem(id) {
     const item = equipment.find(e => e.id === id);
     if(item) {
         const u = item.borrower;
-        const n = item.baseName;
         item.returnTime = new Date().toLocaleString();
         item.status = 'Available'; 
         item.borrower = ''; 
-        item.qrActive = false;
-        logEvent(u, n, "Returned via Scan/Manual");
+        logEvent(u, item.baseName, "Item Returned");
     }
 }
 
@@ -288,8 +279,8 @@ function requestBulk() {
             logEvent(currentUser.username, cat, `Requested ${qty} units`);
         }
     });
-    alert("Request Sent");
-    renderAll();
+    alert("Request sent to Admin, please wait for approval");
+    save();
 }
 
 function startScanner() {
@@ -312,14 +303,14 @@ function stopScanner() {
 function addEquipment() {
     const n = document.getElementById('eqName').value;
     const q = parseInt(document.getElementById('eqQty').value);
-    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*100000), baseName: n, status: 'Available', borrower: '', qrActive: false, borrowTime: '', returnTime: '' });
+    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*100000), baseName: n, status: 'Available', borrower: '', borrowTime: '', returnTime: '' });
     save();
 }
 
 function openQR(id, name) {
     document.getElementById('qr-container').innerHTML = "";
     new QRCode(document.getElementById("qr-container"), { text: `AISAT|${id}`, width: 180, height: 180 });
-    document.getElementById('qr-text').innerText = name + " ID: " + id;
+    document.getElementById('qr-text').innerText = name + " (" + id + ")";
     document.getElementById('qr-modal').style.display = 'flex';
 }
 
