@@ -29,7 +29,7 @@
         .pass-wrapper { position: relative; width: 100%; }
         .toggle-btn { position: absolute; right: 10px; top: 18px; background: none; border: none; color: #00d9ff; cursor: pointer; font-size: 10px; font-weight: bold; }
 
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #001a2a; color: #00d9ff; border: 1px solid #00d9ff55; font-family: inherit; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #001a2a; color: #00d9ff; border: 1px solid #00d9ff55; font-family: inherit; }
         button.action { background: #00d9ff; color: #02111f; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 5px; }
         button.small-btn { padding: 5px 8px; font-size: 10px; cursor: pointer; background: #00d9ff11; color: #00d9ff; border: 1px solid #00d9ff44; margin: 2px; }
         .btn-red { color: #ff4444; border-color: #ff444455; }
@@ -114,21 +114,29 @@
         </div>
         
         <div class="panel">
-            <h3>Manual Return Fallback</h3>
-            <input type="text" id="manualId" placeholder="Enter EQ ID (e.g. EQ-12345)">
-            <button class="action btn-green" onclick="manualReturn()">CONFIRM RETURN</button>
+            <h3>Bulk Return by User</h3>
+            <p style="font-size: 11px; margin-bottom: 5px;">Select a user to return ALL their items instantly.</p>
+            <select id="bulkReturnUser"></select>
+            <button class="action btn-green" onclick="processBulkReturn()">RETURN ALL ITEMS FOR THIS USER</button>
+        </div>
+
+        <div class="panel">
+            <h3>Active Borrowers & Inventory</h3>
+            <table id="fullInventoryTable"></table>
         </div>
 
         <div class="panel">
             <h3>Pending Requests</h3>
             <table id="adminRequestTable"></table>
         </div>
+
         <div class="panel">
             <h3>User Management</h3>
             <table id="userDatabaseTable"></table>
         </div>
+
         <div class="panel">
-            <h3>Inventory</h3>
+            <h3>Inventory Management</h3>
             <input id="eqName" placeholder="Item Name">
             <input type="number" id="eqQty" placeholder="Quantity">
             <button class="action" onclick="addEquipment()">ADD STOCK</button>
@@ -137,7 +145,7 @@
 
     <section id="borrow-section" class="hidden">
         <div class="panel">
-            <h3>Available</h3>
+            <h3>Available for Borrowing</h3>
             <div id="borrow-list-container"></div>
             <button class="action" onclick="requestBulk()">REQUEST SELECTED</button>
         </div>
@@ -178,11 +186,8 @@ function save() {
 
 function togglePass(inputId, btn) {
     const input = document.getElementById(inputId);
-    if(input.type === "password") {
-        input.type = "text"; btn.innerText = "HIDE";
-    } else {
-        input.type = "password"; btn.innerText = "SHOW";
-    }
+    input.type = input.type === "password" ? "text" : "password";
+    btn.innerText = input.type === "password" ? "SHOW" : "HIDE";
 }
 
 function logEvent(user, item, event) {
@@ -219,7 +224,7 @@ function renderAll() {
     myItems.map(e => `<tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.borrowTime || '--'}</td><td>${e.returnTime || '--'}</td><td>${e.status}</td></tr>`).join('') + `</tbody>`;
 
     const filteredHistory = currentUser.role === 'admin' ? historyLog : historyLog.filter(h => h.user === currentUser.username);
-    document.getElementById('history-title').innerText = currentUser.role === 'admin' ? "Full System History" : "My History";
+    document.getElementById('history-title').innerText = currentUser.role === 'admin' ? "Full System History" : "History";
     document.getElementById('historyBody').innerHTML = filteredHistory.map(h => `<tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>`).join('');
 
     const qrItems = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
@@ -229,21 +234,24 @@ function renderAll() {
         </div>
     `).join('') || 'No Active Qr.';
 
+    // Admin Tools
     if(currentUser.role === 'admin') {
+        document.getElementById('fullInventoryTable').innerHTML = `<thead><tr><th>Item</th><th>ID</th><th>Status</th><th>Borrower</th></tr></thead><tbody>` +
+        equipment.map(e => `<tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.status}</td><td style="color:#00ff99">${e.borrower ? '@'+e.borrower : '--'}</td></tr>`).join('') + `</tbody>`;
+
+        const activeBorrowers = [...new Set(equipment.filter(e => e.status === 'Borrowed').map(e => e.borrower))];
+        document.getElementById('bulkReturnUser').innerHTML = `<option value="">-- Select Student --</option>` + 
+        activeBorrowers.map(u => `<option value="${u}">${users[u]?.name || u} (@${u})</option>`).join('');
+
         const pending = equipment.filter(e => e.status === 'Pending');
         const pGroup = {};
         pending.forEach(i => { const k = `${i.borrower}|${i.baseName}`; if(!pGroup[k]) pGroup[k] = { u: i.borrower, n: i.baseName, c: 0 }; pGroup[k].c++; });
-        
         document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Action</th></tr></thead><tbody>` +
         Object.values(pGroup).map(g => `<tr><td>${g.n}</td><td>${g.u}</td><td>${g.c}</td><td><button class="small-btn btn-green" onclick="bulkAction('${g.u}', '${g.n}', 'approve')">APPROVE</button></td></tr>`).join('') + `</tbody>`;
 
         document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
         Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td><td>
-            ${u !== 'admin' ? `
-                <button class="small-btn" onclick="changeRole('${u}', 'admin')">MAKE ADMIN</button>
-                <button class="small-btn" onclick="changeRole('${u}', 'user')">MAKE USER</button>
-                <button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>
-            ` : 'System Root'}
+            ${u !== 'admin' ? `<button class="small-btn" onclick="changeRole('${u}', 'admin')">MAKE ADMIN</button><button class="small-btn" onclick="changeRole('${u}', 'user')">DEMOTE</button><button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` : 'System Root'}
         </td></tr>`).join('') + `</tbody>`;
     }
 
@@ -254,16 +262,22 @@ function renderAll() {
     }).join('');
 }
 
-function manualReturn() {
-    const id = document.getElementById('manualId').value.trim();
-    const item = equipment.find(e => e.id === id);
-    if(item && item.status === 'Borrowed') {
-        const oldUser = item.borrower;
-        item.status = 'Available'; item.borrower = ''; item.returnTime = new Date().toLocaleString();
-        logEvent(oldUser, item.baseName, "Returned (Manual)");
-        document.getElementById('manualId').value = "";
-        alert("Item " + id + " returned successfully.");
-    } else { alert("ID not found or item not currently borrowed."); }
+function processBulkReturn() {
+    const user = document.getElementById('Return User').value;
+    if(!user) return alert("Select a user first.");
+    
+    const borrowedItems = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
+    const itemCount = borrowedItems.length;
+
+    if(confirm(`Return all ${itemCount} items for @${user}?`)) {
+        borrowedItems.forEach(item => {
+            item.status = 'Available';
+            item.borrower = '';
+            item.returnTime = new Date().toLocaleString();
+        });
+        logEvent(user, `${itemCount} Items`, "Return Processed");
+        alert("Returned " + itemCount + " items.");
+    }
 }
 
 function changeRole(u, r) { users[u].role = r; save(); }
@@ -274,7 +288,7 @@ function bulkAction(user, itemName, action) {
     equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending').forEach(item => {
         item.status = 'Borrowed'; item.borrowTime = time; item.returnTime = '--';
     });
-    logEvent(user, itemName, "Approved");
+    logEvent(user, itemName, "Approved Requests");
 }
 
 function requestBulk() {
@@ -285,7 +299,7 @@ function requestBulk() {
             logEvent(currentUser.username, el.dataset.cat, `Requested ${q}`);
         }
     });
-    alert("Request sent to Admin.Please wait for Approval"); save();
+    alert("Request sent to Admin. Please wait for Approval."); save();
 }
 
 function startScanner() {
