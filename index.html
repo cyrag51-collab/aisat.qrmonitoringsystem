@@ -16,7 +16,6 @@
         .login-box { width: 380px; padding: 40px; border: 1px solid #00d9ff; background: #061d31; box-shadow: 0 0 20px rgba(0, 217, 255, 0.2); text-align: center; border-radius: 8px; }
 
         header { padding: 20px 30px; border-bottom: 1px solid #00d9ff33; display: flex; justify-content: space-between; align-items: center; background: #061d31; }
-        .logo { display: flex; align-items: center; gap: 15px; }
         .logo h1 { font-size: 24px; color: #00d9ff; }
 
         nav { display: flex; gap: 10px; padding: 15px 30px; border-bottom: 1px solid #00d9ff33; background: #02111f; position: sticky; top: 0; z-index: 100; }
@@ -29,20 +28,16 @@
         
         input { width: 100%; padding: 12px; margin: 8px 0; background: #001a2a; color: #00d9ff; border: 1px solid #00d9ff55; font-family: inherit; }
         
-        .pass-wrapper { position: relative; width: 100%; }
-        .toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 10px; color: #00d9ffaa; background: none; border: none; }
-
         button.action { background: #00d9ff; color: #02111f; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 5px; }
-        button.small-btn { padding: 4px 8px; font-size: 10px; cursor: pointer; background: #00d9ff22; color: #00d9ff; border: 1px solid #00d9ff55; }
-        .logout-btn { background: transparent; border: 1px solid #ff4444; color: #ff4444; padding: 5px 12px; cursor: pointer; }
+        button.small-btn { padding: 6px 10px; font-size: 11px; cursor: pointer; background: #00d9ff22; color: #00d9ff; border: 1px solid #00d9ff55; margin-right: 5px; }
+        .btn-red { color: #ff4444; border-color: #ff444455; }
+        .btn-green { color: #00ff99; border-color: #00ff9955; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
         th, td { padding: 12px; border: 1px solid #00d9ff22; text-align: left; }
-
+        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; }
         #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .notif-item { padding: 15px; background: #001a2a; margin-bottom: 8px; border-left: 3px solid #00ff99; }
-        #reader { width: 100%; max-width: 400px; margin: 0 auto; border: 1px solid #00d9ff; }
     </style>
 </head>
 <body>
@@ -51,7 +46,7 @@
     <h2 style="color: #00ff99; margin-bottom: 15px;">SCAN PASS</h2>
     <div id="qr-container"></div>
     <p id="qr-text" style="color: #00d9ff; font-size: 11px; margin-bottom: 20px;"></p>
-    <button class="logout-btn" onclick="closeQR()">CLOSE</button>
+    <button class="small-btn btn-red" onclick="closeQR()">CLOSE</button>
 </div>
 
 <div id="login-overlay">
@@ -59,22 +54,19 @@
         <div id="login-form">
             <h2>SYSTEM LOGIN</h2>
             <input type="text" id="username" placeholder="Username">
-            <div class="pass-wrapper">
-                <input type="password" id="password" placeholder="Password">
-                <button type="button" class="toggle-btn" onclick="togglePass('password')">SHOW</button>
-            </div>
+            <input type="password" id="password" placeholder="Password">
             <button class="action" onclick="handleLogin()">ACCESS SYSTEM</button>
-            <p style="font-size: 11px; margin-top: 15px;"><a href="#" onclick="toggleAuth('signup')" style="color:#00d9ff;">Create Account</a></p>
+            <div style="margin-top: 15px; font-size: 11px;">
+                <a href="#" onclick="alert('Contact IT to reset password.')" style="color:#ffcc00; text-decoration: none; margin-right: 10px;">Forgot Password?</a>
+                <a href="#" onclick="toggleAuth('signup')" style="color:#00d9ff; text-decoration: none;">Create Account</a>
+            </div>
         </div>
         <div id="signup-form" class="hidden">
             <h2>NEW ACCOUNT</h2>
             <input type="text" id="reg-name" placeholder="Full Name">
             <input type="text" id="reg-id" placeholder="ID Number">
             <input type="text" id="reg-user" placeholder="Username">
-            <div class="pass-wrapper">
-                <input type="password" id="reg-pass" placeholder="Password">
-                <button type="button" class="toggle-btn" onclick="togglePass('reg-pass')">SHOW</button>
-            </div>
+            <input type="password" id="reg-pass" placeholder="Password">
             <button class="action" onclick="handleSignup()">REGISTER</button>
             <button class="action" style="background:transparent; color:#00d9ff; margin-top:10px" onclick="toggleAuth('login')">BACK</button>
         </div>
@@ -82,62 +74,59 @@
 </div>
 
 <header>
-    <div class="logo">
-        <div><h1>AISAT COLLEGE</h1><p>Equipment Monitoring</p></div>
-    </div>
-    <div>
-        <span id="display-name" style="color: #00ff99;"></span>
-        <button class="logout-btn" onclick="location.reload()" style="margin-left:10px">LOGOUT</button>
-    </div>
+    <div class="logo"><h1>AISAT COLLEGE</h1></div>
+    <div><span id="display-name" style="color: #00ff99;"></span> <button onclick="location.reload()" class="small-btn btn-red">LOGOUT</button></div>
 </header>
 
 <nav>
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
-    <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Database</button>
+    <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Tools</button>
     <button class="tab" onclick="showTab('borrow-section',this)">Borrow Items</button>
-    <button class="tab" onclick="showTab('notif-section',this)">Alerts/Pass</button>
+    <button class="tab" onclick="showTab('notif-section',this)">Passes</button>
 </nav>
 
 <div class="container">
     <section id="dashboard">
         <div class="panel">
-            <h3>Inventory Status</h3>
-            <table>
-                <thead><tr><th>Item</th><th>ID</th><th>Status</th></tr></thead>
-                <tbody id="myItemsTable"></tbody>
-            </table>
+            <h3>My Current Items</h3>
+            <table id="myItemsTable"></table>
         </div>
     </section>
 
     <section id="admin-section" class="hidden">
         <div class="panel">
-            <h3>QR Scanner (Return System)</h3>
+            <h3>QR Return Scanner</h3>
             <div id="reader"></div>
-            <button class="action" onclick="startScanner()" style="margin-top:10px">ACTIVATE CAMERA</button>
+            <button class="action" onclick="startScanner()">START CAMERA</button>
+            <button id="stop-scan-btn" class="action btn-red hidden" onclick="stopScanner()">STOP CAMERA</button>
         </div>
-
         <div class="panel">
-            <h3>Borrow Requests</h3>
+            <h3>Grouped Borrow Requests</h3>
             <table>
-                <thead><tr><th>Item</th><th>User</th><th>Action</th></tr></thead>
+                <thead><tr><th>Item Type</th><th>Borrower</th><th>Qty</th><th>Actions</th></tr></thead>
                 <tbody id="adminRequestTable"></tbody>
             </table>
         </div>
-
         <div class="panel">
-            <h3>User Database</h3>
+            <h3>Active Loans</h3>
             <table>
-                <thead><tr><th>Name</th><th>Role</th><th>Action</th></tr></thead>
-                <tbody id="userTableBody"></tbody>
+                <thead><tr><th>Item ID</th><th>User</th><th>Action</th></tr></thead>
+                <tbody id="adminActiveLoansTable"></tbody>
             </table>
+        </div>
+        <div class="panel">
+            <h3>Add New Inventory</h3>
+            <input id="eqName" placeholder="Item Name">
+            <input type="number" id="eqQty" placeholder="Quantity">
+            <button class="action" onclick="addEquipment()">ADD TO DATABASE</button>
         </div>
     </section>
 
     <section id="borrow-section" class="hidden">
         <div class="panel">
-            <h3>Available Items</h3>
+            <h3>Request Borrowing</h3>
             <div id="borrow-list-container"></div>
-            <button class="action" style="margin-top:20px" onclick="requestBulk()">SUBMIT REQUEST</button>
+            <button class="action" onclick="requestBulk()">SUBMIT REQUESTS</button>
         </div>
     </section>
 
@@ -151,15 +140,9 @@
 
 <script>
 let users = JSON.parse(localStorage.getItem('aisat_users')) || {
-    "admin": { password: "Admin123", role: "admin", name: "System Admin", idNum: "MASTER-001" }
+    "admin": { password: "Admin123", role: "admin", name: "System Admin" }
 };
-
-let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [
-    { id: 'EQ-101', baseName: "Projector", status: 'Available', borrower: '', qrActive: false },
-    { id: 'EQ-102', baseName: "HDMI Cable", status: 'Available', borrower: '', qrActive: false },
-    { id: 'EQ-103', baseName: "Extension", status: 'Available', borrower: '', qrActive: false }
-];
-
+let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [];
 let currentUser = null;
 let html5QrCode = null;
 
@@ -169,64 +152,94 @@ function save() {
     renderAll();
 }
 
-function togglePass(id) {
-    const input = document.getElementById(id);
-    input.type = input.type === "password" ? "text" : "password";
-}
-
 function handleLogin() {
     const u = document.getElementById('username').value.trim();
     const p = document.getElementById('password').value.trim();
     if (users[u] && users[u].password === p) {
         currentUser = { ...users[u], username: u };
-        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('display-name').textContent = currentUser.name;
         document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'admin');
         renderAll();
-    } else { alert("Invalid credentials"); }
+    } else { alert("Invalid Login"); }
 }
 
 function handleSignup() {
     const u = document.getElementById('reg-user').value.trim();
-    if(!u) return alert("Fill all fields");
-    users[u] = { name: document.getElementById('reg-name').value, idNum: document.getElementById('reg-id').value, password: document.getElementById('reg-pass').value, role: "user" };
+    users[u] = { name: document.getElementById('reg-name').value, password: document.getElementById('reg-pass').value, role: "user" };
     save(); toggleAuth('login');
 }
 
 function renderAll() {
     if(!currentUser) return;
 
+    // Student Borrow View
     const cats = [...new Set(equipment.map(e => e.baseName))];
     document.getElementById('borrow-list-container').innerHTML = cats.map(cat => {
         const avail = equipment.filter(e => e.baseName === cat && e.status === 'Available').length;
         return `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between">
-            <span>${cat} (${avail} available)</span>
+            <span>${cat} (${avail})</span>
             <input type="number" class="qty-input" data-cat="${cat}" min="0" max="${avail}" value="0" style="width:60px; margin:0">
         </div>`;
     }).join('');
 
+    // Dashboard
     const myItems = equipment.filter(e => e.borrower === currentUser.username);
     document.getElementById('myItemsTable').innerHTML = myItems.map(e => `
         <tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.status}</td></tr>
-    `).join('') || '<tr><td colspan="3">No items currently held</td></tr>';
+    `).join('') || 'No items.';
 
+    // Passes
     const qrItems = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed' && e.qrActive);
     document.getElementById('notif-list').innerHTML = qrItems.map(e => `
-        <div class="notif-item">
-            <strong>${e.baseName} Approved!</strong><br>
-            <button class="action" onclick="openQR('${e.id}','${e.baseName}')" style="font-size:10px; margin-top:5px">VIEW QR PASS</button>
-        </div>
-    `).join('') || '<p>No active QR passes.</p>';
+        <div class="panel"><strong>${e.baseName}</strong> (ID: ${e.id})<br><button class="action" onclick="openQR('${e.id}','${e.baseName}')">OPEN QR</button></div>
+    `).join('') || 'No active passes.';
 
     if(currentUser.role === 'admin') {
+        // GROUPED REQUESTS logic
         const pending = equipment.filter(e => e.status === 'Pending');
-        document.getElementById('adminRequestTable').innerHTML = pending.map(e => `
-            <tr><td>${e.baseName}</td><td>${e.borrower}</td><td><button class="small-btn" onclick="approveBorrow('${e.id}')">APPROVE</button></td></tr>
-        `).join('') || '<tr><td colspan="3">No requests</td></tr>';
+        const grouped = {};
+        pending.forEach(item => {
+            const key = `${item.borrower}|${item.baseName}`;
+            if(!grouped[key]) grouped[key] = { user: item.borrower, item: item.baseName, count: 0 };
+            grouped[key].count++;
+        });
 
-        document.getElementById('userTableBody').innerHTML = Object.keys(users).map(u => `
-            <tr><td>${users[u].name}</td><td>${users[u].role}</td><td><button class="small-btn" onclick="deleteUser('${u}')">DEL</button></td></tr>
-        `).join('');
+        document.getElementById('adminRequestTable').innerHTML = Object.values(grouped).map(g => `
+            <tr>
+                <td>${g.item}</td><td>${g.user}</td><td>${g.count}</td>
+                <td>
+                    <button class="small-btn btn-green" onclick="bulkAction('${g.user}', '${g.item}', 'approve')">APPROVE ALL</button>
+                    <button class="small-btn btn-red" onclick="bulkAction('${g.user}', '${g.item}', 'deny')">DENY ALL</button>
+                </td>
+            </tr>
+        `).join('') || 'No requests.';
+
+        // ACTIVE LOANS (For manual returns)
+        const active = equipment.filter(e => e.status === 'Borrowed');
+        document.getElementById('adminActiveLoansTable').innerHTML = active.map(e => `
+            <tr><td>${e.id} (${e.baseName})</td><td>${e.borrower}</td>
+            <td><button class="small-btn btn-red" onclick="returnItem('${e.id}')">RETURN</button></td></tr>
+        `).join('') || 'No active loans.';
+    }
+}
+
+function bulkAction(user, itemName, action) {
+    equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending').forEach(item => {
+        if(action === 'approve') {
+            item.status = 'Borrowed'; item.qrActive = true;
+        } else {
+            item.status = 'Available'; item.borrower = ''; item.qrActive = false;
+        }
+    });
+    save();
+}
+
+function returnItem(id) {
+    const item = equipment.find(e => e.id === id);
+    if(item) {
+        item.status = 'Available'; item.borrower = ''; item.qrActive = false;
+        save();
     }
 }
 
@@ -240,40 +253,42 @@ function requestBulk() {
             });
         }
     });
-    save(); alert("Request sent!");
-}
-
-function approveBorrow(id) {
-    const item = equipment.find(e => e.id === id);
-    item.status = 'Borrowed';
-    item.qrActive = true;
-    save();
+    save(); alert("Bulk request sent.");
 }
 
 function startScanner() {
+    document.getElementById('stop-scan-btn').classList.remove('hidden');
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        const eqId = text.split('|')[1]; // Extracting ID from "AISAT-PASS|EQ-XXX|..."
-        const item = equipment.find(e => e.id === eqId);
-        if(item) {
-            item.status = 'Available'; item.borrower = ''; item.qrActive = false;
-            alert("SUCCESS: Item " + eqId + " returned and QR expired.");
-            html5QrCode.stop();
-            save();
-        }
+        const id = text.split('|')[1];
+        returnItem(id);
+        alert("Returned: " + id);
+        stopScanner();
     });
+}
+
+function stopScanner() {
+    if(html5QrCode) html5QrCode.stop().then(() => {
+        document.getElementById('stop-scan-btn').classList.add('hidden');
+        document.getElementById('reader').innerHTML = "";
+    });
+}
+
+function addEquipment() {
+    const n = document.getElementById('eqName').value;
+    const q = parseInt(document.getElementById('eqQty').value);
+    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*10000), baseName: n, status: 'Available', borrower: '', qrActive: false });
+    save();
 }
 
 function openQR(id, name) {
     document.getElementById('qr-container').innerHTML = "";
-    const passData = `AISAT-PASS|${id}|${currentUser.username}|${new Date().toLocaleDateString()}`;
-    new QRCode(document.getElementById("qr-container"), { text: passData, width: 180, height: 180 });
-    document.getElementById('qr-text').innerText = "ITEM: " + name + " (" + id + ")";
+    new QRCode(document.getElementById("qr-container"), { text: `AISAT|${id}`, width: 180, height: 180 });
+    document.getElementById('qr-text').innerText = name + " ID: " + id;
     document.getElementById('qr-modal').style.display = 'flex';
 }
 
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
-function deleteUser(u) { if(u !== 'admin') { delete users[u]; save(); } }
 function showTab(id, btn) { 
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
