@@ -35,7 +35,9 @@
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
         th, td { padding: 12px; border: 1px solid #00d9ff22; text-align: left; }
-        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; }
+        th { color: #00d9ff; background: #00d9ff08; }
+
+        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; background: #000; }
         #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
     </style>
@@ -57,14 +59,13 @@
             <input type="password" id="password" placeholder="Password">
             <button class="action" onclick="handleLogin()">ACCESS SYSTEM</button>
             <div style="margin-top: 15px; font-size: 11px;">
-                <a href="#" onclick="alert('Contact IT to reset password.')" style="color:#ffcc00; text-decoration: none; margin-right: 10px;">Forgot Password?</a>
+                <a href="#" onclick="alert('Contact IT to reset.')" style="color:#ffcc00; text-decoration: none; margin-right: 10px;">Forgot Password?</a>
                 <a href="#" onclick="toggleAuth('signup')" style="color:#00d9ff; text-decoration: none;">Create Account</a>
             </div>
         </div>
         <div id="signup-form" class="hidden">
             <h2>NEW ACCOUNT</h2>
             <input type="text" id="reg-name" placeholder="Full Name">
-            <input type="text" id="reg-id" placeholder="ID Number">
             <input type="text" id="reg-user" placeholder="Username">
             <input type="password" id="reg-pass" placeholder="Password">
             <button class="action" onclick="handleSignup()">REGISTER</button>
@@ -88,7 +89,7 @@
 <div class="container">
     <section id="dashboard">
         <div class="panel">
-            <h3>My Current Items</h3>
+            <h3>My Inventory</h3>
             <table id="myItemsTable"></table>
         </div>
     </section>
@@ -100,22 +101,33 @@
             <button class="action" onclick="startScanner()">START CAMERA</button>
             <button id="stop-scan-btn" class="action btn-red hidden" onclick="stopScanner()">STOP CAMERA</button>
         </div>
+
         <div class="panel">
-            <h3>Grouped Borrow Requests</h3>
+            <h3>Pending Borrow Requests (Grouped)</h3>
             <table>
-                <thead><tr><th>Item Type</th><th>Borrower</th><th>Qty</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Item</th><th>Borrower</th><th>Qty</th><th>Actions</th></tr></thead>
                 <tbody id="adminRequestTable"></tbody>
             </table>
         </div>
+
         <div class="panel">
-            <h3>Active Loans</h3>
+            <h3>Active Loans (Bulk Returns)</h3>
             <table>
-                <thead><tr><th>Item ID</th><th>User</th><th>Action</th></tr></thead>
+                <thead><tr><th>Item</th><th>Borrower</th><th>Qty</th><th>Actions</th></tr></thead>
                 <tbody id="adminActiveLoansTable"></tbody>
             </table>
         </div>
+
         <div class="panel">
-            <h3>Add New Inventory</h3>
+            <h3>User Database</h3>
+            <table>
+                <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Actions</th></tr></thead>
+                <tbody id="userDatabaseTable"></tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h3>Add Stock</h3>
             <input id="eqName" placeholder="Item Name">
             <input type="number" id="eqQty" placeholder="Quantity">
             <button class="action" onclick="addEquipment()">ADD TO DATABASE</button>
@@ -124,7 +136,7 @@
 
     <section id="borrow-section" class="hidden">
         <div class="panel">
-            <h3>Request Borrowing</h3>
+            <h3>Request Items</h3>
             <div id="borrow-list-container"></div>
             <button class="action" onclick="requestBulk()">SUBMIT REQUESTS</button>
         </div>
@@ -161,11 +173,12 @@ function handleLogin() {
         document.getElementById('display-name').textContent = currentUser.name;
         document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'admin');
         renderAll();
-    } else { alert("Invalid Login"); }
+    } else { alert("Error: Wrong Login"); }
 }
 
 function handleSignup() {
     const u = document.getElementById('reg-user').value.trim();
+    if(!u) return;
     users[u] = { name: document.getElementById('reg-name').value, password: document.getElementById('reg-pass').value, role: "user" };
     save(); toggleAuth('login');
 }
@@ -183,65 +196,70 @@ function renderAll() {
         </div>`;
     }).join('');
 
-    // Dashboard
+    // Dashboard Items
     const myItems = equipment.filter(e => e.borrower === currentUser.username);
     document.getElementById('myItemsTable').innerHTML = myItems.map(e => `
         <tr><td>${e.baseName}</td><td>${e.id}</td><td>${e.status}</td></tr>
     `).join('') || 'No items.';
 
-    // Passes
+    // Passes (QR List)
     const qrItems = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed' && e.qrActive);
     document.getElementById('notif-list').innerHTML = qrItems.map(e => `
         <div class="panel"><strong>${e.baseName}</strong> (ID: ${e.id})<br><button class="action" onclick="openQR('${e.id}','${e.baseName}')">OPEN QR</button></div>
     `).join('') || 'No active passes.';
 
+    // Admin Tools Rendering
     if(currentUser.role === 'admin') {
-        // GROUPED REQUESTS logic
+        // Grouped Pending Requests
         const pending = equipment.filter(e => e.status === 'Pending');
-        const grouped = {};
+        const pGroup = {};
         pending.forEach(item => {
             const key = `${item.borrower}|${item.baseName}`;
-            if(!grouped[key]) grouped[key] = { user: item.borrower, item: item.baseName, count: 0 };
-            grouped[key].count++;
+            if(!pGroup[key]) pGroup[key] = { user: item.borrower, item: item.baseName, count: 0 };
+            pGroup[key].count++;
         });
+        document.getElementById('adminRequestTable').innerHTML = Object.values(pGroup).map(g => `
+            <tr><td>${g.item}</td><td>${g.user}</td><td>${g.count}</td>
+            <td><button class="small-btn btn-green" onclick="bulkAction('${g.user}', '${g.item}', 'approve')">APPROVE ALL</button>
+            <button class="small-btn btn-red" onclick="bulkAction('${g.user}', '${g.item}', 'deny')">DENY ALL</button></td></tr>
+        `).join('') || '<tr><td colspan="4">No pending requests</td></tr>';
 
-        document.getElementById('adminRequestTable').innerHTML = Object.values(grouped).map(g => `
-            <tr>
-                <td>${g.item}</td><td>${g.user}</td><td>${g.count}</td>
-                <td>
-                    <button class="small-btn btn-green" onclick="bulkAction('${g.user}', '${g.item}', 'approve')">APPROVE ALL</button>
-                    <button class="small-btn btn-red" onclick="bulkAction('${g.user}', '${g.item}', 'deny')">DENY ALL</button>
-                </td>
-            </tr>
-        `).join('') || 'No requests.';
+        // Grouped Active Loans for Bulk Return
+        const borrowed = equipment.filter(e => e.status === 'Borrowed');
+        const bGroup = {};
+        borrowed.forEach(item => {
+            const key = `${item.borrower}|${item.baseName}`;
+            if(!bGroup[key]) bGroup[key] = { user: item.borrower, item: item.baseName, count: 0 };
+            bGroup[key].count++;
+        });
+        document.getElementById('adminActiveLoansTable').innerHTML = Object.values(bGroup).map(g => `
+            <tr><td>${g.item}</td><td>${g.user}</td><td>${g.count}</td>
+            <td><button class="small-btn btn-red" onclick="bulkAction('${g.user}', '${g.item}', 'return')">RETURN ALL</button></td></tr>
+        `).join('') || '<tr><td colspan="4">No active loans</td></tr>';
 
-        // ACTIVE LOANS (For manual returns)
-        const active = equipment.filter(e => e.status === 'Borrowed');
-        document.getElementById('adminActiveLoansTable').innerHTML = active.map(e => `
-            <tr><td>${e.id} (${e.baseName})</td><td>${e.borrower}</td>
-            <td><button class="small-btn btn-red" onclick="returnItem('${e.id}')">RETURN</button></td></tr>
-        `).join('') || 'No active loans.';
+        // User Database
+        document.getElementById('userDatabaseTable').innerHTML = Object.keys(users).map(u => `
+            <tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td>
+            <td>${u !== 'admin' ? `<button class="small-btn btn-red" onclick="deleteUser('${u}')">DELETE</button>` : ''}</td></tr>
+        `).join('');
     }
 }
 
+// BULK LOGIC: Handles Approval, Denial, and Return for many items at once
 function bulkAction(user, itemName, action) {
-    equipment.filter(e => e.borrower === user && e.baseName === itemName && e.status === 'Pending').forEach(item => {
-        if(action === 'approve') {
+    equipment.filter(e => e.borrower === user && e.baseName === itemName).forEach(item => {
+        if(action === 'approve' && item.status === 'Pending') {
             item.status = 'Borrowed'; item.qrActive = true;
-        } else {
+        } else if(action === 'deny' && item.status === 'Pending') {
+            item.status = 'Available'; item.borrower = ''; item.qrActive = false;
+        } else if(action === 'return' && item.status === 'Borrowed') {
             item.status = 'Available'; item.borrower = ''; item.qrActive = false;
         }
     });
     save();
 }
 
-function returnItem(id) {
-    const item = equipment.find(e => e.id === id);
-    if(item) {
-        item.status = 'Available'; item.borrower = ''; item.qrActive = false;
-        save();
-    }
-}
+function deleteUser(u) { if(confirm('Delete '+u+'?')) { delete users[u]; save(); } }
 
 function requestBulk() {
     document.querySelectorAll('.qty-input').forEach(input => {
@@ -253,18 +271,22 @@ function requestBulk() {
             });
         }
     });
-    save(); alert("Bulk request sent.");
+    save(); alert("Request submitted.");
 }
 
 function startScanner() {
     document.getElementById('stop-scan-btn').classList.remove('hidden');
     html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        const id = text.split('|')[1];
-        returnItem(id);
-        alert("Returned: " + id);
-        stopScanner();
-    });
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
+        const id = decodedText.split('|')[1];
+        const item = equipment.find(e => e.id === id);
+        if(item) {
+            item.status = 'Available'; item.borrower = ''; item.qrActive = false;
+            alert("Success: " + id + " returned.");
+            save();
+            stopScanner();
+        }
+    }).catch(err => alert("Camera error: " + err));
 }
 
 function stopScanner() {
@@ -277,7 +299,7 @@ function stopScanner() {
 function addEquipment() {
     const n = document.getElementById('eqName').value;
     const q = parseInt(document.getElementById('eqQty').value);
-    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*10000), baseName: n, status: 'Available', borrower: '', qrActive: false });
+    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*100000), baseName: n, status: 'Available', borrower: '', qrActive: false });
     save();
 }
 
@@ -289,12 +311,14 @@ function openQR(id, name) {
 }
 
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
+
 function showTab(id, btn) { 
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
 }
+
 function toggleAuth(m) {
     document.getElementById('login-form').classList.add('hidden');
     document.getElementById('signup-form').classList.add('hidden');
