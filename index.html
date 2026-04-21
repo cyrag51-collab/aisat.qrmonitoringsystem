@@ -19,28 +19,31 @@
         .logo { display: flex; align-items: center; gap: 15px; }
         .logo img { height: 60px; width: auto; }
         .logo h1 { font-size: 24px; color: #00d9ff; }
-        .logo p { font-size: 11px; letter-spacing: 1px; }
 
         nav { display: flex; gap: 10px; padding: 15px 30px; border-bottom: 1px solid #00d9ff33; background: #02111f; position: sticky; top: 0; z-index: 100; }
-        nav button { background: transparent; border: 1px solid #00d9ff55; color: #00d9ff; padding: 8px 15px; cursor: pointer; font-family: inherit; transition: 0.3s; }
+        nav button { background: transparent; border: 1px solid #00d9ff55; color: #00d9ff; padding: 8px 15px; cursor: pointer; font-family: inherit; }
         nav button.active { background: #00d9ff22; border-color: #00d9ff; }
 
         .container { padding: 30px; }
         .hidden { display: none !important; }
-        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .card, .panel { border: 1px solid #00d9ff33; padding: 20px; border-radius: 8px; background: #061d31aa; }
+        .panel { border: 1px solid #00d9ff33; padding: 20px; border-radius: 8px; background: #061d31aa; margin-bottom: 20px; }
         
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #001a2a; color: #00d9ff; border: 1px solid #00d9ff55; font-family: inherit; }
-        button.action { background: #00d9ff; color: #02111f; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #001a2a; color: #00d9ff; border: 1px solid #00d9ff55; font-family: inherit; }
+        
+        .pass-wrapper { position: relative; width: 100%; }
+        .toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 10px; color: #00d9ffaa; background: none; border: none; font-family: inherit; }
+
+        button.action { background: #00d9ff; color: #02111f; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; }
+        button.small-btn { padding: 4px 8px; font-size: 10px; cursor: pointer; background: #00d9ff22; color: #00d9ff; border: 1px solid #00d9ff55; }
         .logout-btn { background: transparent; border: 1px solid #ff4444; color: #ff4444; padding: 5px 12px; cursor: pointer; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
         th, td { padding: 12px; border: 1px solid #00d9ff22; text-align: left; }
-        th { background: #00d9ff11; color: #00d9ff; }
+        th { background: #00d9ff11; }
 
         #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        #reader { width: 100%; max-width: 400px; border: 2px solid #00d9ff; margin: 15px auto; }
+        .notif-item { padding: 15px; background: #001a2a; margin-bottom: 8px; border-left: 3px solid #00ff99; }
     </style>
 </head>
 <body>
@@ -57,30 +60,24 @@
         <div id="login-form">
             <h2>SYSTEM LOGIN</h2>
             <input type="text" id="username" placeholder="Username">
-            <input type="password" id="password" placeholder="Password">
+            <div class="pass-wrapper">
+                <input type="password" id="password" placeholder="Password">
+                <button type="button" class="toggle-btn" onclick="togglePass('password')">SHOW</button>
+            </div>
             <button class="action" onclick="handleLogin()">ACCESS SYSTEM</button>
-            <p style="font-size: 11px; margin-top: 15px;">
-                <a href="#" onclick="toggleAuth('forgot')" style="color:#00d9ff;">Forgot?</a> | 
-                <a href="#" onclick="toggleAuth('signup')" style="color:#00d9ff;">Sign Up</a>
-            </p>
+            <p style="font-size: 11px; margin-top: 15px;"><a href="#" onclick="toggleAuth('signup')" style="color:#00d9ff;">Create Account</a></p>
         </div>
-        
-        <div id="forgot-form" class="hidden">
-            <h2>RECOVERY</h2>
-            <p style="font-size: 12px; margin-bottom: 10px;">Enter your email to reset</p>
-            <input type="email" id="forgot-email" placeholder="Email Address">
-            <button class="action" onclick="handleForgot()">SEND RESET LINK</button>
-            <button class="action" style="background:transparent; color:#00d9ff; border:1px solid #00d9ff" onclick="toggleAuth('login')">BACK</button>
-        </div>
-
         <div id="signup-form" class="hidden">
             <h2>NEW ACCOUNT</h2>
             <input type="text" id="reg-name" placeholder="Full Name">
             <input type="text" id="reg-id" placeholder="ID Number">
             <input type="text" id="reg-user" placeholder="Username">
-            <input type="password" id="reg-pass" placeholder="Password">
-            <button class="action" onclick="handleSignup()">CREATE</button>
-            <button class="action" style="background:transparent; color:#00d9ff; border:1px solid #00d9ff" onclick="toggleAuth('login')">BACK</button>
+            <div class="pass-wrapper">
+                <input type="password" id="reg-pass" placeholder="Password">
+                <button type="button" class="toggle-btn" onclick="togglePass('reg-pass')">SHOW</button>
+            </div>
+            <button class="action" onclick="handleSignup()">REGISTER</button>
+            <button class="action" style="background:transparent; color:#00d9ff; margin-top:10px" onclick="toggleAuth('login')">BACK</button>
         </div>
     </div>
 </div>
@@ -88,14 +85,11 @@
 <header>
     <div class="logo">
         <img src="images-removebg-preview.png" alt="AISAT" onerror="this.style.display='none'">
-        <div>
-            <h1>AISAT COLLEGE</h1>
-            <p>Equipment Monitoring System</p>
-        </div>
+        <div><h1>AISAT COLLEGE</h1><p>Equipment Monitoring System</p></div>
     </div>
-    <div id="user-info" style="text-align: right;">
-        <span id="display-name" style="color: #00ff99; font-weight: bold; display: block;"></span>
-        <button class="logout-btn" onclick="location.reload()" style="font-size: 10px; margin-top: 5px;">LOGOUT</button>
+    <div style="text-align: right;">
+        <span id="display-name" style="color: #00ff99; font-weight: bold;"></span>
+        <button class="logout-btn" onclick="location.reload()" style="margin-left:10px">LOGOUT</button>
     </div>
 </header>
 
@@ -108,32 +102,37 @@
 
 <div class="container">
     <section id="dashboard">
-        <div class="cards">
-            <div class="card"><h2 id="totalEquip">0</h2><p>Total Inventory</p></div>
-            <div class="card"><h2 id="pending-stat" style="color:#ffd700">0</h2><p>Pending Requests</p></div>
-        </div>
-        <div id="admin-log-panel" class="panel hidden">
-            <h3>Recent Activity</h3>
-            <table>
-                <thead>
-                    <tr><th>Item</th><th>User</th><th>Status</th><th>Time</th></tr>
-                </thead>
-                <tbody id="activityBody"></tbody>
-            </table>
+        <div class="panel">
+            <h3>Inventory Overview</h3>
+            <p>Total Items: <span id="totalEquip">0</span></p>
+            <p>Pending Requests: <span id="pending-stat">0</span></p>
         </div>
     </section>
 
     <section id="admin-section" class="hidden">
         <div class="panel">
-            <h3>QR Scanner (Return Items)</h3>
-            <div id="reader"></div>
-            <button class="action" onclick="initScanner()">START CAMERA</button>
+            <h3>User Management Database</h3>
+            <table>
+                <thead>
+                    <tr><th>Name</th><th>Username</th><th>Role</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
         </div>
+
         <div class="panel">
-            <h3>Add New Equipment</h3>
+            <h3>Pending Requests</h3>
+            <table>
+                <thead><tr><th>Item</th><th>User</th><th>Action</th></tr></thead>
+                <tbody id="pendingRequestsTable"></tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h3>Inventory Management</h3>
             <input id="eqName" placeholder="Item Name">
-            <input type="number" id="eqQty" placeholder="Quantity">
-            <button class="action" onclick="addEquipment()">UPDATE INVENTORY</button>
+            <input type="number" id="eqQty" placeholder="Qty">
+            <button class="action" onclick="addEquipment()">ADD TO STOCK</button>
         </div>
     </section>
 
@@ -141,13 +140,13 @@
         <div class="panel">
             <h3>Request Items</h3>
             <div id="borrow-list-container"></div>
-            <button class="action" onclick="requestBulk()">SUBMIT REQUEST</button>
+            <button class="action" style="margin-top:20px" onclick="requestBulk()">SUBMIT REQUEST</button>
         </div>
     </section>
 
     <section id="notif-section" class="hidden">
         <div class="panel">
-            <h3>Notifications</h3>
+            <h3>System Alerts</h3>
             <div id="notif-list"></div>
         </div>
     </section>
@@ -157,10 +156,21 @@
 let users = JSON.parse(localStorage.getItem('aisat_users')) || {
     "admin": { password: "Admin123", role: "admin", name: "System Admin", idNum: "MASTER-001" }
 };
-let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [];
+
+let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [
+    { id: 1, baseName: "Projector", status: 'Available', borrower: '' },
+    { id: 2, baseName: "HDMI Cable", status: 'Available', borrower: '' }
+];
+
 let notifications = JSON.parse(localStorage.getItem('aisat_notifs')) || [];
 let currentUser = null;
-let html5QrCode = null;
+
+function togglePass(id) {
+    const input = document.getElementById(id);
+    const btn = input.nextElementSibling;
+    input.type = input.type === "password" ? "text" : "password";
+    btn.textContent = input.type === "password" ? "SHOW" : "HIDE";
+}
 
 function handleLogin() {
     const u = document.getElementById('username').value.trim();
@@ -168,15 +178,14 @@ function handleLogin() {
     if (users[u] && users[u].password === p) {
         currentUser = { ...users[u], username: u };
         document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('display-name').textContent = currentUser.name.toUpperCase();
+        document.getElementById('display-name').textContent = currentUser.name;
         document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'admin');
-        document.getElementById('admin-log-panel').classList.toggle('hidden', currentUser.role !== 'admin');
         renderAll();
-    } else { alert("Access Denied: Invalid Credentials"); }
+    } else { alert("Login Failed"); }
 }
 
 function handleSignup() {
-    const u = document.getElementById('reg-user').value;
+    const u = document.getElementById('reg-user').value.trim();
     if(!u) return alert("Username required");
     users[u] = {
         name: document.getElementById('reg-name').value,
@@ -184,72 +193,122 @@ function handleSignup() {
         password: document.getElementById('reg-pass').value,
         role: "user"
     };
-    localStorage.setItem('aisat_users', JSON.stringify(users));
-    alert("Account Created!");
-    toggleAuth('login');
+    save(); alert("Account Created!"); toggleAuth('login');
 }
 
-function handleForgot() {
-    const email = document.getElementById('forgot-email').value;
-    if(email) {
-        alert("Recovery link sent to: " + email);
-        toggleAuth('login');
-    } else {
-        alert("Please enter a valid email.");
+function setUserRole(u, role) {
+    if(u === 'admin') return alert("Master Admin role cannot be changed.");
+    users[u].role = role;
+    save();
+}
+
+function deleteUser(u) {
+    if(u === 'admin') return alert("Cannot delete Master Admin.");
+    if(confirm(`Delete user ${u}?`)) {
+        delete users[u];
+        save();
     }
-}
-
-function initScanner() {
-    html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        alert("Scanned: " + text);
-        html5QrCode.stop();
-    }).catch(err => alert("Camera Error"));
 }
 
 function renderAll() {
     document.getElementById('totalEquip').textContent = equipment.length;
     document.getElementById('pending-stat').textContent = equipment.filter(e => e.status === 'Pending').length;
- 
+
+    if(currentUser && currentUser.role === 'admin') {
+        document.getElementById('userTableBody').innerHTML = Object.keys(users).map(u => `
+            <tr>
+                <td>${users[u].name}</td>
+                <td>${u}</td>
+                <td style="color:${users[u].role === 'admin' ? '#00ff99' : '#bfc3d8'}">${users[u].role.toUpperCase()}</td>
+                <td>
+                    <button class="small-btn" onclick="setUserRole('${u}', '${users[u].role === 'admin' ? 'user' : 'admin'}')">TOGGLE ROLE</button>
+                    <button class="small-btn" style="color:#ff4444" onclick="deleteUser('${u}')">REMOVE</button>
+                </td>
+            </tr>
+        `).join('');
+
+        const pending = equipment.filter(e => e.status === 'Pending');
+        document.getElementById('pendingRequestsTable').innerHTML = pending.map(e => `
+            <tr><td>${e.baseName}</td><td>${e.borrower}</td>
+            <td><button class="small-btn" onclick="approveItem(${e.id})">APPROVE</button></td></tr>
+        `).join('');
+    }
+
     const cats = [...new Set(equipment.map(e => e.baseName))];
     document.getElementById('borrow-list-container').innerHTML = cats.map(cat => {
         const avail = equipment.filter(e => e.baseName === cat && e.status === 'Available').length;
-        return `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #222">
-                    <span>${cat}</span>
-                    <span>Available: ${avail} <input type="number" class="qty-input" data-cat="${cat}" min="0" max="${avail}" style="width:50px"></span>
-                </div>`;
+        return `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between">
+            <span>${cat} (${avail})</span>
+            <input type="number" class="qty-input" data-cat="${cat}" min="0" max="${avail}" value="0" style="width:60px; margin:0">
+        </div>`;
     }).join('');
+
+    const myNotifs = notifications.filter(n => n.target === currentUser.username).reverse();
+    document.getElementById('notif-list').innerHTML = myNotifs.map(n => `
+        <div class="notif-item">
+            <strong>${n.title}</strong>: ${n.msg}
+            ${n.qrData ? `<br><button class="action" style="padding:5px; font-size:10px; margin-top:10px;" onclick="openQR('${n.qrData}')">VIEW QR PASS</button>` : ''}
+        </div>
+    `).join('');
+}
+
+function requestBulk() {
+    document.querySelectorAll('.qty-input').forEach(input => {
+        const qty = parseInt(input.value);
+        const cat = input.getAttribute('data-cat');
+        if(qty > 0) {
+            equipment.filter(e => e.baseName === cat && e.status === 'Available').slice(0, qty).forEach(item => {
+                item.status = 'Pending'; item.borrower = currentUser.username;
+            });
+        }
+    });
+    save(); alert("Request Sent");
+}
+
+function approveItem(id) {
+    const item = equipment.find(e => e.id === id);
+    item.status = 'Borrowed';
+    const qrString = `AISAT|ID:${item.id}|USER:${item.borrower}|ITEM:${item.baseName}|DATE:${new Date().toLocaleDateString()}`;
+    notifications.push({ target: item.borrower, title: "APPROVED", msg: `Accepted: ${item.baseName}`, qrData: qrString });
+    save();
 }
 
 function addEquipment() {
     const name = document.getElementById('eqName').value;
-    const qty = parseInt(document.getElementById('eqQty').value) || 0;
+    const qty = parseInt(document.getElementById('eqQty').value);
+    if(!name || !qty) return;
     for(let i=0; i<qty; i++) {
-        equipment.push({ id: Date.now()+Math.random(), baseName: name, status: 'Available', borrower: '' });
+        equipment.push({ id: Date.now() + Math.random(), baseName: name, status: 'Available', borrower: '' });
     }
     save();
 }
 
 function save() {
+    localStorage.setItem('aisat_users', JSON.stringify(users));
     localStorage.setItem('aisat_equip', JSON.stringify(equipment));
     localStorage.setItem('aisat_notifs', JSON.stringify(notifications));
     renderAll();
 }
 
-function showTab(id, btn) {
+function openQR(data) {
+    document.getElementById('qr-container').innerHTML = "";
+    new QRCode(document.getElementById("qr-container"), { text: data, width: 160, height: 160 });
+    document.getElementById('qr-text').innerText = data;
+    document.getElementById('qr-modal').style.display = 'flex';
+}
+
+function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
+function showTab(id, btn) { 
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
 }
-
 function toggleAuth(m) {
-    ['login-form','signup-form','forgot-form'].forEach(f => document.getElementById(f).classList.add('hidden'));
-    document.getElementById(m+'-form').classList.remove('hidden');
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('signup-form').classList.add('hidden');
+    document.getElementById(m + '-form').classList.remove('hidden');
 }
-
-function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
 </script>
-
 </body>
 </html>
