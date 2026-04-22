@@ -9,40 +9,55 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Consolas, monospace; background: #02111f; color: #bfc3d8; overflow-x: hidden; }
-        body::before { content: ""; position: fixed; inset: 0; background: linear-gradient(rgba(0,255,255,.05) 1px,transparent 1px), linear-gradient(90deg,rgba(0,255,255,.05) 1px,transparent 1px); background-size: 40px 40px; z-index: -1; }
+        body { 
+            font-family: Consolas, monospace; 
+            background: #ffffff; 
+            color: #222222; 
+            overflow-x: hidden; 
+            font-size: 16px; /* Increased base font size */
+        }
+        
+        /* Adjusted the grid background for light mode visibility */
+        body::before { 
+            content: ""; 
+            position: fixed; 
+            inset: 0; 
+            background: linear-gradient(rgba(0,0,0,.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,0,0,.03) 1px,transparent 1px); 
+            background-size: 40px 40px; 
+            z-index: -1; 
+        }
 
-        #login-overlay { position: fixed; inset: 0; background: #02111f; display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .login-box { width: 380px; padding: 40px; border: 1px solid #00d9ff; background: #061d31; box-shadow: 0 0 20px rgba(0, 217, 255, 0.2); text-align: center; border-radius: 8px; }
+        #login-overlay { position: fixed; inset: 0; background: #ffffff; display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-box { width: 420px; padding: 40px; border: 1px solid #0056b3; background: #f8f9fa; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); text-align: center; border-radius: 8px; }
 
-        header { padding: 20px 30px; border-bottom: 1px solid #00d9ff33; display: flex; justify-content: space-between; align-items: center; background: #061d31; }
-        .logo h1 { font-size: 18px; color: #00d9ff; letter-spacing: 1px; }
+        header { padding: 20px 30px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; background: #f1f3f5; }
+        .logo h1 { font-size: 22px; color: #0056b3; letter-spacing: 1px; }
 
-        nav { display: flex; gap: 10px; padding: 15px 30px; border-bottom: 1px solid #00d9ff33; background: #02111f; position: sticky; top: 0; z-index: 100; }
-        nav button { background: transparent; border: 1px solid #00d9ff55; color: #00d9ff; padding: 8px 15px; cursor: pointer; font-family: inherit; }
-        nav button.active { background: #00d9ff22; border-color: #00d9ff; }
+        nav { display: flex; gap: 10px; padding: 15px 30px; border-bottom: 1px solid #ddd; background: #ffffff; position: sticky; top: 0; z-index: 100; }
+        nav button { background: #f8f9fa; border: 1px solid #ccc; color: #333; padding: 10px 18px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: bold; }
+        nav button.active { background: #0056b3; border-color: #0056b3; color: white; }
 
         .container { padding: 30px; }
         .hidden { display: none !important; }
-        .panel { border: 1px solid #00d9ff33; padding: 20px; border-radius: 8px; background: #061d31aa; margin-bottom: 20px; }
+        .panel { border: 1px solid #ddd; padding: 25px; border-radius: 8px; background: #ffffff; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         .pass-wrapper { position: relative; width: 100%; }
-        .toggle-btn { position: absolute; right: 10px; top: 18px; background: none; border: none; color: #00d9ff; cursor: pointer; font-size: 10px; font-weight: bold; }
+        .toggle-btn { position: absolute; right: 10px; top: 18px; background: none; border: none; color: #0056b3; cursor: pointer; font-size: 12px; font-weight: bold; }
 
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #001a2a; color: #00d9ff; border: 1px solid #00d9ff55; font-family: inherit; }
-        button.action { background: #00d9ff; color: #02111f; border: none; padding: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 5px; }
-        button.small-btn { padding: 5px 8px; font-size: 10px; cursor: pointer; background: #00d9ff11; color: #00d9ff; border: 1px solid #00d9ff44; margin: 2px; }
-        .btn-red { color: #ff4444; border-color: #ff444455; }
-        .btn-green { color: #00ff99; border-color: #00ff9955; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; background: #fff; color: #333; border: 1px solid #ccc; font-family: inherit; font-size: 14px; }
+        button.action { background: #0056b3; color: #fff; border: none; padding: 14px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 5px; font-size: 15px; }
+        button.small-btn { padding: 8px 12px; font-size: 12px; cursor: pointer; background: #f1f3f5; color: #333; border: 1px solid #ccc; margin: 2px; }
+        .btn-red { color: #d00; border-color: #d00; }
+        .btn-green { color: #008000; border-color: #008000; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
-        th, td { padding: 10px; border: 1px solid #00d9ff22; text-align: left; }
-        th { color: #00d9ff; background: #00d9ff08; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 12px; border: 1px solid #eee; text-align: left; }
+        th { color: #333; background: #f8f9fa; font-weight: bold; }
         
-        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; background: #000; min-height: 250px; }
-        #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
+        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #ccc; background: #000; min-height: 250px; }
+        #qr-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .badge { background: #ff4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px; }
+        .badge { background: #ff4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -50,28 +65,28 @@
 <div id="qr-modal">
     <h2 style="color: #00ff99; margin-bottom: 15px;">RETURN PASS</h2>
     <div id="qr-container"></div>
-    <p id="qr-text" style="color: #00d9ff; font-size: 11px; margin-bottom: 20px;"></p>
+    <p id="qr-text" style="color: #fff; font-size: 14px; margin-bottom: 20px;"></p>
     <button class="small-btn btn-red" onclick="closeQR()">CLOSE</button>
 </div>
 
 <div id="login-overlay">
     <div class="login-box">
         <div id="login-form">
-            <h2 style="color:#00d9ff; font-size: 25px;">AISAT COLLEGE DASMA</h2>
-            <p style="font-size:10px; margin-bottom:20px; color:#888;">QR Code Based Tools Monitoring System</p>
+            <h2 style="color:#0056b3; font-size: 28px;">AISAT COLLEGE DASMA</h2>
+            <p style="font-size:12px; margin-bottom:20px; color:#666;">QR Code Based Tools Monitoring System</p>
             <input type="text" id="login-user" placeholder="Username">
             <div class="pass-wrapper">
                 <input type="password" id="login-pass" placeholder="Password">
                 <button class="toggle-btn" onclick="togglePass('login-pass', this)">SHOW</button>
             </div>
             <button class="action" onclick="handleLogin()">LOG IN</button>
-            <div style="margin-top: 15px; font-size: 11px;">
-                <a href="#" onclick="alert('Contact Admin.')" style="color:#ffcc00; text-decoration: none; margin-right: 10px;">Forgot?</a>
-                <a href="#" onclick="toggleAuth('signup')" style="color:#00d9ff; text-decoration: none;">Create Account</a>
+            <div style="margin-top: 15px; font-size: 13px;">
+                <a href="#" onclick="alert('Contact Admin.')" style="color:#d00; text-decoration: none; margin-right: 10px;">Forgot?</a>
+                <a href="#" onclick="toggleAuth('signup')" style="color:#0056b3; text-decoration: none;">Create Account</a>
             </div>
         </div>
         <div id="signup-form" class="hidden">
-            <h2 style="font-size: 18px;">CREATE ACCOUNT</h2>
+            <h2 style="font-size: 20px;">CREATE ACCOUNT</h2>
             <input type="text" id="reg-name" placeholder="Full Name*">
             <input type="text" id="reg-id" placeholder="ID Number*">
             <input type="email" id="reg-email" placeholder="Email Address*">
@@ -81,16 +96,16 @@
                 <button class="toggle-btn" onclick="togglePass('reg-p', this)">SHOW</button>
             </div>
             <button class="action" onclick="handleSignup()">REGISTER</button>
-            <button class="action" style="background:transparent; color:#00d9ff; margin-top:10px" onclick="toggleAuth('login')">BACK</button>
+            <button class="action" style="background:transparent; color:#0056b3; border:1px solid #0056b3; margin-top:10px" onclick="toggleAuth('login')">BACK</button>
         </div>
     </div>
 </div>
 
 <header>
     <div class="logo"><h1>AISAT COLLEGE DASMA</h1></div>
-    <div class="logo"><h1>Welcome, User!</h1></div>
+    <div class="logo"><h1 style="font-size: 16px; color: #555;">Welcome, User!</h1></div>
     <div>
-        <span id="display-info" style="color: #00ff99; font-size: 12px; margin-right: 10px;"></span>
+        <span id="display-info" style="color: #008000; font-size: 14px; margin-right: 10px;"></span>
         <button onclick="location.reload()" class="small-btn btn-red">LOGOUT</button>
     </div>
 </header>
@@ -105,9 +120,9 @@
 <div class="container">
     <section id="dashboard">
         <div id="batch-qr-panel" class="panel hidden">
-            <h3 style="color:#00ff99">Return QR</h3>
-            <p style="font-size:11px; margin-bottom:10px">Show this to Admin to return borrowed items.</p>
-            <button class="action btn-green" onclick="generateBatchQR()">GENERATE RETURN PASS</button>
+            <h3 style="color:#008000">Return QR</h3>
+            <p style="font-size:14px; margin-bottom:10px">Show this to Admin to return borrowed items.</p>
+            <button class="action btn-green" onclick="generateBatchQR()" style="background:#008000; color:white">GENERATE RETURN PASS</button>
         </div>
 
         <div class="panel">
@@ -117,7 +132,7 @@
                     Pending Requests <span id="pending-count" class="badge">0</span>
                 </button>
             </div>
-            <p id="status-msg" style="font-size: 12px; margin-top: 10px; color: #00d9ff;">Status: Initializing...</p>
+            <p id="status-msg" style="font-size: 14px; margin-top: 10px; color: #0056b3;">Status: Initializing...</p>
         </div>
 
         <div class="panel">
@@ -131,8 +146,8 @@
 
     <section id="library-section" class="hidden">
         <div class="panel">
-            <h3 style="color:#888">QR Scanned Pass Library</h3>
-            <p style="font-size:11px; color:#888; margin-bottom:10px">Permanent record of all validated return passes.</p>
+            <h3 style="color:#555">QR Scanned Pass Library</h3>
+            <p style="font-size:13px; color:#777; margin-bottom:10px">Permanent record of all validated return passes.</p>
             <table>
                 <thead>
                     <tr>
@@ -178,7 +193,7 @@
         <div class="panel">
             <h3>Return by User</h3>
             <select id="ReturnUser"></select>
-            <button class="action btn-green" onclick="processBulkReturn()">RETURN ALL ITEMS FOR THIS USER</button>
+            <button class="action btn-green" onclick="processBulkReturn()" style="background:#008000; color:white">RETURN ALL ITEMS BY THIS USER</button>
         </div>
 
         <div class="panel">
@@ -209,6 +224,7 @@
 </div>
 
 <script>
+/* JavaScript code remains exactly the same as provided */
 let users = JSON.parse(localStorage.getItem('aisat_users')) || {
     "admin": { password: "admin", role: "admin", name: "System Admin", idNumber: "000", email: "admin@aisat.edu" }
 };
@@ -256,12 +272,12 @@ function handleLogin() {
         
         const isAdmin = currentUser.role === 'admin';
         document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
-        document.getElementById('nav-library').classList.toggle('hidden', !isAdmin); // Restricted to Admin
+        document.getElementById('nav-library').classList.toggle('hidden', !isAdmin);
         document.getElementById('nav-borrow').classList.toggle('hidden', isAdmin);
         
         if(currentUser.role === 'user') {
             document.getElementById('batch-qr-panel').classList.remove('hidden');
-            showTab('dashboard', document.getElementById('nav-dashboard')); // Ensure student starts on Dashboard
+            showTab('dashboard', document.getElementById('nav-dashboard')); 
         }
         renderAll();
     } else { alert("Invalid Credentials"); }
@@ -337,7 +353,7 @@ function renderAll() {
             invGroup[k].count++;
         });
         document.getElementById('fullInventoryTable').innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Borrower</th></tr></thead><tbody>` +
-        Object.values(invGroup).map(g => `<tr><td>${g.name}</td><td>${g.count}</td><td>${g.status}</td><td style="color:#00ff99">${g.user ? '@'+g.user : '--'}</td></tr>`).join('') + `</tbody>`;
+        Object.values(invGroup).map(g => `<tr><td>${g.name}</td><td>${g.count}</td><td>${g.status}</td><td style="color:#008000">${g.user ? '@'+g.user : '--'}</td></tr>`).join('') + `</tbody>`;
 
         document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
         Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td><td>
@@ -351,7 +367,7 @@ function renderAll() {
     const cats = [...new Set(equipment.map(e => e.baseName))];
     document.getElementById('borrow-list-container').innerHTML = cats.map(cat => {
         const avail = equipment.filter(e => e.baseName === cat && e.status === 'Available').length;
-        return `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between"><span>${cat} (${avail})</span><input type="number" class="qty-in" data-cat="${cat}" min="0" max="${avail}" value="0" style="width:50px; margin:0"></div>`;
+        return `<div style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between"><span>${cat} (${avail})</span><input type="number" class="qty-in" data-cat="${cat}" min="0" max="${avail}" value="0" style="width:50px; margin:0"></div>`;
     }).join('');
 }
 
