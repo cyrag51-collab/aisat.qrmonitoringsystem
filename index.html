@@ -39,7 +39,7 @@
         th, td { padding: 10px; border: 1px solid #00d9ff22; text-align: left; }
         th { color: #00d9ff; background: #00d9ff08; }
         
-        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; background: #000; }
+        #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #00d9ff; background: #000; min-height: 250px; }
         #qr-modal { position: fixed; inset: 0; background: rgba(2, 17, 31, 0.95); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .badge { background: #ff4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px; }
@@ -378,21 +378,39 @@ function requestBulk() {
 }
 
 function startScanner() {
+    // Show stop button and stop any existing scanner instance
     document.getElementById('stop-scan-btn').classList.remove('hidden');
+    if (html5QrCode) {
+        html5QrCode.stop().catch(err => console.log(err));
+    }
+
     html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-        if(txt.startsWith('BATCH|')) {
-            const studentUser = txt.split('|')[1];
-            const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
-            if(items.length > 0) {
-                addToLibrary(users[studentUser].name, users[studentUser].idNumber, items.length);
-                
-                items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
-                logEvent(studentUser, `${items.length} Items`, "QR Return Success");
-                alert("Successfully returned all items and recorded to Library.");
-                stopScanner(); save();
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        config, 
+        (txt) => {
+            if(txt.startsWith('BATCH|')) {
+                const studentUser = txt.split('|')[1];
+                const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
+                if(items.length > 0) {
+                    addToLibrary(users[studentUser].name, users[studentUser].idNumber, items.length);
+                    items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
+                    logEvent(studentUser, `${items.length} Items`, "QR Return Success");
+                    alert("Successfully returned all items and recorded to Library.");
+                    stopScanner(); 
+                    save();
+                }
             }
+        },
+        (errorMessage) => {
+            
         }
+    ).catch((err) => {
+        console.error("Camera Error:", err);
+        alert("Camera failed: " + err + "\n\nNote: Ensure you are using HTTPS and have granted camera permissions.");
+        document.getElementById('stop-scan-btn').classList.add('hidden');
     });
 }
 
@@ -417,14 +435,28 @@ function addEquipment() {
 }
 
 function removeUser(u) { if(confirm("Remove user?")) { delete users[u]; save(); } }
-function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => { document.getElementById('stop-scan-btn').classList.add('hidden'); document.getElementById('reader').innerHTML = ""; }); }
+
+function stopScanner() { 
+    if(html5QrCode) {
+        html5QrCode.stop().then(() => { 
+            document.getElementById('stop-scan-btn').classList.add('hidden'); 
+            document.getElementById('reader').innerHTML = ""; 
+        }).catch(err => {
+            document.getElementById('stop-scan-btn').classList.add('hidden');
+            document.getElementById('reader').innerHTML = "";
+        });
+    } 
+}
+
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
+
 function showTab(id, btn) { 
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
 }
+
 function toggleAuth(m) {
     document.getElementById('login-form').classList.add('hidden');
     document.getElementById('signup-form').classList.add('hidden');
