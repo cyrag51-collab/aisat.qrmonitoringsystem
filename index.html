@@ -96,7 +96,7 @@
 </header>
 
 <nav>
-    <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
+    <button id="nav-dashboard" class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
     <button id="nav-library" class="tab" onclick="showTab('library-section',this)">Library</button>
     <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Tools</button>
     <button id="nav-borrow" class="tab" onclick="showTab('borrow-section',this)">Borrow</button>
@@ -256,10 +256,12 @@ function handleLogin() {
         
         const isAdmin = currentUser.role === 'admin';
         document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
+        document.getElementById('nav-library').classList.toggle('hidden', !isAdmin); // Restricted to Admin
         document.getElementById('nav-borrow').classList.toggle('hidden', isAdmin);
         
         if(currentUser.role === 'user') {
             document.getElementById('batch-qr-panel').classList.remove('hidden');
+            showTab('dashboard', document.getElementById('nav-dashboard')); // Ensure student starts on Dashboard
         }
         renderAll();
     } else { alert("Invalid Credentials"); }
@@ -378,7 +380,6 @@ function requestBulk() {
 }
 
 function startScanner() {
-    // Show stop button and stop any existing scanner instance
     document.getElementById('stop-scan-btn').classList.remove('hidden');
     if (html5QrCode) {
         html5QrCode.stop().catch(err => console.log(err));
@@ -404,12 +405,10 @@ function startScanner() {
                 }
             }
         },
-        (errorMessage) => {
-            
-        }
+        (errorMessage) => {}
     ).catch((err) => {
         console.error("Camera Error:", err);
-        alert("Camera failed: " + err + "\n\nNote: Ensure you are using HTTPS and have granted camera permissions.");
+        alert("Camera failed: " + err + "\n\nNote: Ensure you are using HTTPS.");
         document.getElementById('stop-scan-btn').classList.add('hidden');
     });
 }
@@ -418,9 +417,7 @@ function processBulkReturn() {
     const user = document.getElementById('ReturnUser').value;
     if(!user) return;
     const items = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
-  
     addToLibrary(users[user].name, users[user].idNumber, items.length);
-    
     items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
     logEvent(user, `${items.length} Items`, "Manual Return");
     save();
