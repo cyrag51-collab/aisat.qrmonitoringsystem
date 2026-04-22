@@ -57,14 +57,14 @@
 <div id="login-overlay">
     <div class="login-box">
         <div id="login-form">
-            <h2 style="color:#00d9ff; font-size: 20px;">AISAT COLLEGE DASMA</h2>
+            <h2 style="color:#00d9ff; font-size: 25px;">AISAT COLLEGE DASMA</h2>
             <p style="font-size:10px; margin-bottom:20px; color:#888;">QR Code Based Tools Monitoring System</p>
             <input type="text" id="login-user" placeholder="Username">
             <div class="pass-wrapper">
                 <input type="password" id="login-pass" placeholder="Password">
                 <button class="toggle-btn" onclick="togglePass('login-pass', this)">SHOW</button>
             </div>
-            <button class="action" onclick="handleLogin()">ACCESS SYSTEM</button>
+            <button class="action" onclick="handleLogin()">LOG IN</button>
             <div style="margin-top: 15px; font-size: 11px;">
                 <a href="#" onclick="alert('Contact Admin.')" style="color:#ffcc00; text-decoration: none; margin-right: 10px;">Forgot?</a>
                 <a href="#" onclick="toggleAuth('signup')" style="color:#00d9ff; text-decoration: none;">Create Account</a>
@@ -88,6 +88,7 @@
 
 <header>
     <div class="logo"><h1>AISAT COLLEGE DASMA</h1></div>
+    <div class="logo"><h1>Welcome, User!</h1></div>
     <div>
         <span id="display-info" style="color: #00ff99; font-size: 12px; margin-right: 10px;"></span>
         <button onclick="location.reload()" class="small-btn btn-red">LOGOUT</button>
@@ -96,6 +97,7 @@
 
 <nav>
     <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
+    <button id="nav-library" class="tab" onclick="showTab('library-section',this)">Library</button>
     <button id="nav-admin" class="tab hidden" onclick="showTab('admin-section',this)">Admin Tools</button>
     <button id="nav-borrow" class="tab" onclick="showTab('borrow-section',this)">Borrow</button>
 </nav>
@@ -123,6 +125,24 @@
             <table>
                 <thead><tr><th>Time</th><th>User</th><th>Item</th><th>Event</th></tr></thead>
                 <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="library-section" class="hidden">
+        <div class="panel">
+            <h3 style="color:#00ff99">QR Scanned Pass Library</h3>
+            <p style="font-size:11px; color:#888; margin-bottom:10px">Permanent record of all validated return passes.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scan Time</th>
+                        <th>Student Name</th>
+                        <th>ID Number</th>
+                        <th>Items Returned</th>
+                    </tr>
+                </thead>
+                <tbody id="libraryLogBody"></tbody>
             </table>
         </div>
     </section>
@@ -194,6 +214,7 @@ let users = JSON.parse(localStorage.getItem('aisat_users')) || {
 };
 let equipment = JSON.parse(localStorage.getItem('aisat_equip')) || [];
 let historyLog = JSON.parse(localStorage.getItem('aisat_history')) || [];
+let scannedLibrary = JSON.parse(localStorage.getItem('aisat_library')) || [];
 let currentUser = null;
 let html5QrCode = null;
 
@@ -201,6 +222,7 @@ function save() {
     localStorage.setItem('aisat_users', JSON.stringify(users));
     localStorage.setItem('aisat_equip', JSON.stringify(equipment));
     localStorage.setItem('aisat_history', JSON.stringify(historyLog));
+    localStorage.setItem('aisat_library', JSON.stringify(scannedLibrary));
     renderAll();
 }
 
@@ -214,6 +236,12 @@ function logEvent(user, item, event) {
     const time = new Date().toLocaleString();
     historyLog.unshift({ time, user, item, event });
     if(historyLog.length > 50) historyLog.pop();
+    save();
+}
+
+function addToLibrary(studentName, studentId, itemsCount) {
+    const scanTime = new Date().toLocaleString();
+    scannedLibrary.unshift({ scanTime, studentName, studentId, itemsCount });
     save();
 }
 
@@ -253,6 +281,14 @@ function handleSignup() {
     toggleAuth('login');
 }
 
+function makeAdmin(u) {
+    if(confirm(`Promote ${users[u].name} to Admin?`)) {
+        users[u].role = 'admin';
+        save();
+        alert("User is now an admin.");
+    }
+}
+
 function generateBatchQR() {
     const borrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
     if(borrowed.length === 0) return alert("No active borrowed items.");
@@ -264,6 +300,10 @@ function generateBatchQR() {
 
 function renderAll() {
     if(!currentUser) return;
+
+    document.getElementById('libraryLogBody').innerHTML = scannedLibrary.map(l => 
+        `<tr><td>${l.scanTime}</td><td>${l.studentName}</td><td>${l.studentId}</td><td>${l.itemsCount}</td></tr>`
+    ).join('');
 
     const filteredHistory = currentUser.role === 'admin' ? historyLog : historyLog.filter(h => h.user === currentUser.username);
     document.getElementById('historyBody').innerHTML = filteredHistory.map(h => `<tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>`).join('');
@@ -299,7 +339,10 @@ function renderAll() {
 
         document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
         Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td><td>
-            ${u !== 'admin' ? `<button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` : 'Root'}
+            ${u !== 'admin' ? `
+                <button class="small-btn btn-green" onclick="makeAdmin('${u}')">MAKE ADMIN</button>
+                <button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` 
+            : 'Root'}
         </td></tr>`).join('') + `</tbody>`;
     }
 
@@ -342,9 +385,11 @@ function startScanner() {
             const studentUser = txt.split('|')[1];
             const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
             if(items.length > 0) {
+                addToLibrary(users[studentUser].name, users[studentUser].idNumber, items.length);
+                
                 items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
                 logEvent(studentUser, `${items.length} Items`, "QR Return Success");
-                alert("Successfully returned all items.");
+                alert("Successfully returned all items and recorded to Library.");
                 stopScanner(); save();
             }
         }
@@ -355,6 +400,9 @@ function processBulkReturn() {
     const user = document.getElementById('ReturnUser').value;
     if(!user) return;
     const items = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
+  
+    addToLibrary(users[user].name, users[user].idNumber, items.length);
+    
     items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
     logEvent(user, `${items.length} Items`, "Manual Return");
     save();
