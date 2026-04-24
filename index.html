@@ -6,6 +6,13 @@
     <title>AISAT COLLEGE DASMA — QR Code Based Tools Monitoring System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init("FjZEwvc-rJvJHQpBA");
+       })();
+    </script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -65,15 +72,15 @@
 <div id="qr-modal">
     <h2 style="color: #ffffff; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">RETURN PASS</h2>
     <div id="qr-container"></div>
-    <p id="qr-text" style="color: #fff; font-size: 14px; margin-bottom: 20px;"></p>
+    <div id="qr-text" style="color: #fff; font-size: 14px; margin-bottom: 20px; text-align: center; line-height: 1.5;"></div>
     <button class="small-btn btn-red" onclick="closeQR()" style="background:white;">CLOSE</button>
 </div>
 
 <div id="login-overlay">
     <div class="login-box">
         <div id="login-form">
-            <h2 style="color:#0056b3; font-size: 28px;">AISAT COLLEGE DASMA</h2>
-            <p style="font-size:12px; margin-bottom:20px; color:#6c757d;">QR Code Based Tools Monitoring System</p>
+            <h2 style="color:#0470e2; font-size: 30px;">AISAT COLLEGE DASMA</h2>
+            <p style="font-size:12px; margin: bottom 25px;px; color:#323e47;">QR Code Based Tools Monitoring System</p>
             <input type="text" id="login-user" placeholder="Username">
             <div class="pass-wrapper">
                 <input type="password" id="login-pass" placeholder="Password">
@@ -81,7 +88,7 @@
             </div>
             <button class="action" onclick="handleLogin()">LOG IN</button>
             <div style="margin-top: 15px; font-size: 13px;">
-                <a href="#" onclick="alert('Contact Admin.')" style="color:#dc3545; text-decoration: none; margin-right: 10px;">Forgot?</a>
+                <a href="#" onclick="handleForgotPassword()" style="color:#dc3545; text-decoration: none; margin-right: 10px;">Forgot?</a>
                 <a href="#" onclick="toggleAuth('signup')" style="color:#0056b3; text-decoration: none;">Create Account</a>
             </div>
         </div>
@@ -103,9 +110,8 @@
 
 <header>
     <div class="logo"><h1>AISAT COLLEGE DASMA</h1></div>
-    <div class="logo"><h1 style="font-size: 16px; color: #6c757d;">Welcome, User!</h1></div>
     <div>
-        <span id="display-info" style="color: #28a745; font-size: 14px; margin-right: 10px;"></span>
+        <span id="display-info" style="color: #256b36; font-size: 14px; margin-right: 10px;"></span>
         <button onclick="location.reload()" class="small-btn btn-red">LOGOUT</button>
     </div>
 </header>
@@ -132,7 +138,7 @@
                     Pending Requests <span id="pending-count" class="badge">0</span>
                 </button>
             </div>
-            <p id="status-msg" style="font-size: 14px; margin-top: 10px; color: #0056b3;">Status: Initializing...</p>
+            <p id="status-msg" style="font-size: 14px; margin-top: 10px; color: #0056b3;">Welcome to the AISAT Dasma QR Monitoring System</p>
         </div>
 
         <div class="panel">
@@ -146,7 +152,7 @@
 
     <section id="library-section" class="hidden">
         <div class="panel">
-            <h3 style="color:#6c757d">QR Scanned Pass Library</h3>
+            <h3 style="color:#0f0f0f">QR Scanned Pass Library</h3>
             <p style="font-size:13px; color:#6c757d; margin-bottom:10px">Permanent record of all validated return passes.</p>
             <table>
                 <thead>
@@ -180,10 +186,10 @@
             <table id="borrowedLibraryTable">
                 <thead>
                     <tr>
-                        <th>QR ID</th>
                         <th>Equipment</th>
                         <th>User</th>
-                        <th>Borrow Date</th>
+                        <th>Quantity</th>
+                        <th>Recent Date</th>
                     </tr>
                 </thead>
                 <tbody id="libraryBody"></tbody>
@@ -254,6 +260,31 @@ function logEvent(user, item, event) {
     save();
 }
 
+function handleForgotPassword() {
+    const username = document.getElementById('login-user').value.trim();
+    if (!username) { alert("Enter your username first."); return; }
+    const user = users[username];
+    if (!user) { alert("Username not found."); return; }
+    if (!user.email) { alert("No email associated with this account."); return; }
+
+    const tempPass = Math.random().toString(36).slice(-8);
+    users[username].password = tempPass;
+    save();
+
+    const templateParams = {
+        to_name: user.name,
+        to_email: user.email,
+        temp_password: tempPass
+    };
+
+    emailjs.send('service_4pz7927', 'template_62ujb3r', templateParams)
+        .then(() => alert("A new temporary password has been sent to " + user.email))
+        .catch((err) => {
+            console.error("Email error:", err);
+            alert("Email service failed. Password reset to: " + tempPass);
+        });
+}
+
 function addToLibrary(studentName, studentId, itemsCount) {
     const scanTime = new Date().toLocaleString();
     scannedLibrary.unshift({ scanTime, studentName, studentId, itemsCount });
@@ -267,7 +298,6 @@ function handleLogin() {
         currentUser = { ...users[u], username: u };
         document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('display-info').textContent = `${currentUser.name} (@${u})`;
-        document.getElementById('status-msg').textContent = `Authenticated as: ${currentUser.name}`;
         
         const isAdmin = currentUser.role === 'admin';
         document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
@@ -309,9 +339,17 @@ function makeAdmin(u) {
 function generateBatchQR() {
     const borrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
     if(borrowed.length === 0) return alert("No active borrowed items.");
+    const returnTime = new Date().toLocaleString();
+    const borrowTime = borrowed[0].borrowTime || "N/A";
+    const passData = `PASS|${currentUser.name}|${borrowed.length}|${borrowTime}|${returnTime}|${currentUser.username}`;
     document.getElementById('qr-container').innerHTML = "";
-    new QRCode(document.getElementById("qr-container"), { text: `BATCH|${currentUser.username}`, width: 180, height: 180 });
-    document.getElementById('qr-text').innerText = "Student: " + currentUser.name + " (" + borrowed.length + " Items)";
+    new QRCode(document.getElementById("qr-container"), { text: passData, width: 180, height: 180 });
+    document.getElementById('qr-text').innerHTML = `
+        <strong>Name:</strong> ${currentUser.name}<br>
+        <strong>Items:</strong> ${borrowed.length}<br>
+        <strong>Borrowed:</strong> ${borrowTime}<br>
+        <strong>Return:</strong> ${returnTime}
+    `;
     document.getElementById('qr-modal').style.display = 'flex';
 }
 
@@ -338,8 +376,15 @@ function renderAll() {
             <button class="small-btn btn-red" onclick="bulkAction('${g.u}', '${g.n}', 'disapprove')">DISAPPROVE</button>
         </td></tr>`).join('') + `</tbody>`;
 
-        const borrowedItems = equipment.filter(e => e.status === 'Borrowed');
-        document.getElementById('libraryBody').innerHTML = borrowedItems.map(e => `<tr><td>${e.id}</td><td>${e.baseName}</td><td>@${e.borrower}</td><td>${e.borrowTime}</td></tr>`).join('');
+        const bGroup = {};
+        equipment.filter(e => e.status === 'Borrowed').forEach(e => {
+            const k = `${e.borrower}|${e.baseName}`;
+            if(!bGroup[k]) bGroup[k] = { u: e.borrower, n: e.baseName, c: 0, date: e.borrowTime };
+            bGroup[k].c++;
+        });
+        document.getElementById('libraryBody').innerHTML = Object.values(bGroup).map(g => 
+            `<tr><td>${g.n}</td><td>@${g.u}</td><td>${g.c} Units</td><td>${g.date}</td></tr>`
+        ).join('');
 
         const activeBorrowers = [...new Set(equipment.filter(e => e.status === 'Borrowed').map(e => e.borrower))];
         document.getElementById('ReturnUser').innerHTML = `<option value="">-- Select Student --</option>` + 
@@ -396,25 +441,24 @@ function requestBulk() {
 
 function startScanner() {
     document.getElementById('stop-scan-btn').classList.remove('hidden');
-    if (html5QrCode) {
-        html5QrCode.stop().catch(err => console.log(err));
-    }
-
+    if (html5QrCode) { html5QrCode.stop().catch(err => console.log(err)); }
     html5QrCode = new Html5Qrcode("reader");
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
     html5QrCode.start(
         { facingMode: "environment" }, 
         config, 
         (txt) => {
-            if(txt.startsWith('BATCH|')) {
-                const studentUser = txt.split('|')[1];
+            if(txt.startsWith('PASS|')) {
+                const parts = txt.split('|');
+                const studentName = parts[1];
+                const itemsCount = parseInt(parts[2]);
+                const studentUser = parts[5];
                 const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
                 if(items.length > 0) {
-                    addToLibrary(users[studentUser].name, users[studentUser].idNumber, items.length);
-                    items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
-                    logEvent(studentUser, `${items.length} Items`, "QR Return Success");
-                    alert("Successfully returned all items and recorded to Library.");
+                    addToLibrary(studentName, users[studentUser].idNumber, itemsCount);
+                    items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.borrowTime = ''; });
+                    logEvent(studentUser, `${itemsCount} Items`, `QR Return Success`);
+                    alert(`Return Validated!\nName: ${studentName}\nItems: ${itemsCount}`);
                     stopScanner(); 
                     save();
                 }
@@ -423,7 +467,7 @@ function startScanner() {
         (errorMessage) => {}
     ).catch((err) => {
         console.error("Camera Error:", err);
-        alert("Camera failed: " + err + "\n\nNote: Ensure you are using HTTPS.");
+        alert("Camera failed. Ensure you are using HTTPS.");
         document.getElementById('stop-scan-btn').classList.add('hidden');
     });
 }
@@ -433,7 +477,7 @@ function processBulkReturn() {
     if(!user) return;
     const items = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
     addToLibrary(users[user].name, users[user].idNumber, items.length);
-    items.forEach(item => { item.status = 'Available'; item.borrower = ''; });
+    items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.borrowTime = ''; });
     logEvent(user, `${items.length} Items`, "Manual Return");
     save();
 }
