@@ -80,7 +80,7 @@
     <div class="login-box">
         <div id="login-form">
             <h2 style="color:#0470e2; font-size: 30px;">AISAT COLLEGE DASMA</h2>
-            <p style="font-size:12px; margin: bottom 25px;px; color:#323e47;">QR Code Based Tools Monitoring System</p>
+            <p style="font-size:12px; margin-bottom: 25px; color:#323e47;">QR Code Based Tools Monitoring System</p>
             <input type="text" id="login-user" placeholder="Username">
             <div class="pass-wrapper">
                 <input type="password" id="login-pass" placeholder="Password">
@@ -339,16 +339,17 @@ function makeAdmin(u) {
 function generateBatchQR() {
     const borrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
     if(borrowed.length === 0) return alert("No active borrowed items.");
+    
     const returnTime = new Date().toLocaleString();
-    const borrowTime = borrowed[0].borrowTime || "N/A";
-    const passData = `PASS|${currentUser.name}|${borrowed.length}|${borrowTime}|${returnTime}|${currentUser.username}`;
+    const passData = `PASS|${currentUser.name}|${borrowed.length}||${returnTime}|${currentUser.username}`;
+    
     document.getElementById('qr-container').innerHTML = "";
     new QRCode(document.getElementById("qr-container"), { text: passData, width: 180, height: 180 });
+    
     document.getElementById('qr-text').innerHTML = `
         <strong>Name:</strong> ${currentUser.name}<br>
         <strong>Items:</strong> ${borrowed.length}<br>
-        <strong>Borrowed:</strong> ${borrowTime}<br>
-        <strong>Return:</strong> ${returnTime}
+        <strong>Returned Date & Time:</strong> ${returnTime}
     `;
     document.getElementById('qr-modal').style.display = 'flex';
 }
