@@ -64,13 +64,12 @@
         #reader { width: 100%; max-width: 400px; margin: 10px auto; border: 1px solid #ced4da; background: #000; min-height: 250px; border-radius: 8px; }
         #qr-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
         #qr-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .badge { background: #dc3545; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 5px; }
     </style>
 </head>
 <body>
 
 <div id="qr-modal">
-    <h2 style="color: #ffffff; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">RETURN PASS</h2>
+    <h2 style="color: #ffffff; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">BORROW PASS SUMMARY</h2>
     <div id="qr-container"></div>
     <div id="qr-text" style="color: #fff; font-size: 14px; margin-bottom: 20px; text-align: center; line-height: 1.5;"></div>
     <button class="small-btn btn-red" onclick="closeQR()" style="background:white;">CLOSE</button>
@@ -126,18 +125,13 @@
 <div class="container">
     <section id="dashboard">
         <div id="batch-qr-panel" class="panel hidden">
-            <h3 style="color:#28a745">Return QR</h3>
-            <p style="font-size:14px; margin-bottom:10px">Show this to Admin to return borrowed items.</p>
-            <button class="action btn-green" onclick="generateBatchQR()" style="background:#28a745; color:white">GENERATE RETURN PASS</button>
+            <h3 style="color:#28a745">Generate QR Pass</h3>
+            <p style="font-size:14px; margin-bottom:10px">Show this to Admin to verify your current borrowed items.</p>
+            <button class="action btn-green" onclick="generateBatchQR()" style="background:#28a745; color:white">VIEW PASS</button>
         </div>
 
         <div class="panel">
-            <div style="display:flex; justify-content:space-between; align-items:center">
-                <h3>System Notifications</h3>
-                <button id="admin-pending-btn" class="small-btn btn-green hidden" onclick="showTab('admin-section', document.getElementById('nav-admin'))">
-                    Pending Requests <span id="pending-count" class="badge">0</span>
-                </button>
-            </div>
+            <h3>System Notifications</h3>
             <p id="status-msg" style="font-size: 14px; margin-top: 10px; color: #0056b3;">Welcome to the AISAT Dasma QR Monitoring System</p>
         </div>
 
@@ -152,15 +146,14 @@
 
     <section id="library-section" class="hidden">
         <div class="panel">
-            <h3 style="color:#0f0f0f">QR Scanned Pass Library</h3>
-            <p style="font-size:13px; color:#6c757d; margin-bottom:10px">Permanent record of all validated return passes.</p>
+            <h3 style="color:#0f0f0f">Library — Returned Items Archive</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Scan Time</th>
+                        <th>Returned Date/Time</th>
                         <th>Student Name</th>
                         <th>ID Number</th>
-                        <th>Items Returned</th>
+                        <th>Items Count</th>
                     </tr>
                 </thead>
                 <tbody id="libraryLogBody"></tbody>
@@ -170,7 +163,7 @@
 
     <section id="admin-section" class="hidden">
         <div class="panel">
-            <h3>QR Scanner</h3>
+            <h3>Admin QR Scanner</h3>
             <div id="reader"></div>
             <button class="action" onclick="startScanner()">START CAMERA</button>
             <button id="stop-scan-btn" class="action btn-red hidden" onclick="stopScanner()">STOP CAMERA</button>
@@ -189,7 +182,7 @@
                         <th>Equipment</th>
                         <th>User</th>
                         <th>Quantity</th>
-                        <th>Recent Date</th>
+                        <th>Date Borrowed</th>
                     </tr>
                 </thead>
                 <tbody id="libraryBody"></tbody>
@@ -197,26 +190,9 @@
         </div>
 
         <div class="panel">
-            <h3>Return by User</h3>
+            <h3>Manual Return</h3>
             <select id="ReturnUser"></select>
-            <button class="action btn-green" onclick="processBulkReturn()" style="background:#28a745; color:white">RETURN ALL ITEMS BY THIS USER</button>
-        </div>
-
-        <div class="panel">
-            <h3>Inventory Overview</h3>
-            <table id="fullInventoryTable"></table>
-        </div>
-
-        <div class="panel">
-            <h3>User Management</h3>
-            <table id="userDatabaseTable"></table>
-        </div>
-
-        <div class="panel">
-            <h3>Inventory Management</h3>
-            <input id="eqName" placeholder="Item Name">
-            <input type="number" id="eqQty" placeholder="Quantity">
-            <button class="action" onclick="addEquipment()">ADD STOCK</button>
+            <button class="action btn-green" onclick="processBulkReturn()" style="background:#28a745; color:white">CONFIRM RETURN</button>
         </div>
     </section>
 
@@ -247,12 +223,6 @@ function save() {
     renderAll();
 }
 
-function togglePass(inputId, btn) {
-    const input = document.getElementById(inputId);
-    input.type = input.type === "password" ? "text" : "password";
-    btn.innerText = input.type === "password" ? "SHOW" : "HIDE";
-}
-
 function logEvent(user, item, event) {
     const time = new Date().toLocaleString();
     historyLog.unshift({ time, user, item, event });
@@ -260,34 +230,28 @@ function logEvent(user, item, event) {
     save();
 }
 
-function handleForgotPassword() {
-    const username = document.getElementById('login-user').value.trim();
-    if (!username) { alert("Enter your username first."); return; }
-    const user = users[username];
-    if (!user) { alert("Username not found."); return; }
-    if (!user.email) { alert("No email associated with this account."); return; }
-
-    const tempPass = Math.random().toString(36).slice(-8);
-    users[username].password = tempPass;
-    save();
-
-    const templateParams = {
-        to_name: user.name,
-        to_email: user.email,
-        temp_password: tempPass
-    };
-
-    emailjs.send('service_4pz7927', 'template_62ujb3r', templateParams)
-        .then(() => alert("A new temporary password has been sent to " + user.email))
-        .catch((err) => {
-            console.error("Email error:", err);
-            alert("Email service failed. Password reset to: " + tempPass);
-        });
+function generateBatchQR() {
+    const borrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
+    if(borrowed.length === 0) return alert("No active borrowed items.");
+    
+    const borrowTime = borrowed[0].borrowTime || "N/A";
+    const passData = `PASS|${currentUser.name}|${borrowed.length}|${borrowTime}|NA|${currentUser.username}`;
+    
+    document.getElementById('qr-container').innerHTML = "";
+    new QRCode(document.getElementById("qr-container"), { text: passData, width: 180, height: 180 });
+    
+    document.getElementById('qr-text').innerHTML = `
+        <strong>Name:</strong> ${currentUser.name}<br>
+        <strong>Borrow Date:</strong> ${borrowTime.split(',')[0]}<br>
+        <strong>Borrow Time:</strong> ${borrowTime.split(',')[1]}<br>
+        <strong>Items:</strong> ${borrowed.length}
+    `;
+    document.getElementById('qr-modal').style.display = 'flex';
 }
 
 function addToLibrary(studentName, studentId, itemsCount) {
-    const scanTime = new Date().toLocaleString();
-    scannedLibrary.unshift({ scanTime, studentName, studentId, itemsCount });
+    const returnTime = new Date().toLocaleString();
+    scannedLibrary.unshift({ scanTime: returnTime, studentName, studentId, itemsCount });
     save();
 }
 
@@ -306,57 +270,54 @@ function handleLogin() {
         
         if(currentUser.role === 'user') {
             document.getElementById('batch-qr-panel').classList.remove('hidden');
-            showTab('dashboard', document.getElementById('nav-dashboard')); 
         }
         renderAll();
     } else { alert("Invalid Credentials"); }
 }
 
-function handleSignup() {
-    const u = document.getElementById('reg-u').value.trim();
-    const n = document.getElementById('reg-name').value.trim();
-    const idNum = document.getElementById('reg-id').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const p = document.getElementById('reg-p').value.trim();
-
-    if(!u || !n || !idNum || !email || !p) { alert("Fields required!"); return; }
-    if(users[u]) { alert("Username exists!"); return; }
-
-    users[u] = { name: n, idNumber: idNum, email: email, password: p, role: "user" };
-    save(); 
-    alert("Registration Successful.");
-    toggleAuth('login');
+function startScanner() {
+    document.getElementById('stop-scan-btn').classList.remove('hidden');
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        { fps: 10, qrbox: 250 }, 
+        (txt) => {
+            if(txt.startsWith('PASS|')) {
+                const parts = txt.split('|');
+                const studentName = parts[1];
+                const studentUser = parts[5];
+                const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
+                
+                if(items.length > 0) {
+                    const returnStamp = new Date().toLocaleString();
+                    addToLibrary(studentName, users[studentUser].idNumber, items.length);
+                    items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.borrowTime = ''; });
+                    
+                    logEvent(studentUser, "Multiple Items", `Returned to Library at ${returnStamp}`);
+                    
+                    alert(`Return Processed Successfully for ${studentName}`);
+                    stopScanner(); 
+                    save();
+                }
+            }
+        }
+    ).catch(err => alert("Camera Error"));
 }
 
-function makeAdmin(u) {
-    if(confirm(`Promote ${users[u].name} to Admin?`)) {
-        users[u].role = 'admin';
-        save();
-        alert("User is now an admin.");
-    }
-}
-
-function generateBatchQR() {
-    const borrowed = equipment.filter(e => e.borrower === currentUser.username && e.status === 'Borrowed');
-    if(borrowed.length === 0) return alert("No active borrowed items.");
+function processBulkReturn() {
+    const user = document.getElementById('ReturnUser').value;
+    if(!user) return;
+    const items = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
+    const returnStamp = new Date().toLocaleString();
+    addToLibrary(users[user].name, users[user].idNumber, items.length);
+    items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.borrowTime = ''; });
     
-    const returnTime = new Date().toLocaleString();
-    const passData = `PASS|${currentUser.name}|${borrowed.length}||${returnTime}|${currentUser.username}`;
-    
-    document.getElementById('qr-container').innerHTML = "";
-    new QRCode(document.getElementById("qr-container"), { text: passData, width: 180, height: 180 });
-    
-    document.getElementById('qr-text').innerHTML = `
-        <strong>Name:</strong> ${currentUser.name}<br>
-        <strong>Items:</strong> ${borrowed.length}<br>
-        <strong>Returned Date & Time:</strong> ${returnTime}
-    `;
-    document.getElementById('qr-modal').style.display = 'flex';
+    logEvent(user, `${items.length} Items`, `Manual Return at ${returnStamp}`);
+    save();
 }
 
 function renderAll() {
     if(!currentUser) return;
-
     document.getElementById('libraryLogBody').innerHTML = scannedLibrary.map(l => 
         `<tr><td>${l.scanTime}</td><td>${l.studentName}</td><td>${l.studentId}</td><td>${l.itemsCount}</td></tr>`
     ).join('');
@@ -365,18 +326,6 @@ function renderAll() {
     document.getElementById('historyBody').innerHTML = filteredHistory.map(h => `<tr><td>${h.time}</td><td>${h.user}</td><td>${h.item}</td><td>${h.event}</td></tr>`).join('');
 
     if(currentUser.role === 'admin') {
-        const pending = equipment.filter(e => e.status === 'Pending');
-        document.getElementById('admin-pending-btn').classList.toggle('hidden', pending.length === 0);
-        document.getElementById('pending-count').innerText = pending.length;
-
-        const pGroup = {};
-        pending.forEach(i => { const k = `${i.borrower}|${i.baseName}`; if(!pGroup[k]) pGroup[k] = { u: i.borrower, n: i.baseName, c: 0 }; pGroup[k].c++; });
-        document.getElementById('adminRequestTable').innerHTML = `<thead><tr><th>Item</th><th>User</th><th>Qty</th><th>Action</th></tr></thead><tbody>` +
-        Object.values(pGroup).map(g => `<tr><td>${g.n}</td><td>${g.u}</td><td>${g.c}</td><td>
-            <button class="small-btn btn-green" onclick="bulkAction('${g.u}', '${g.n}', 'approve')">APPROVE</button>
-            <button class="small-btn btn-red" onclick="bulkAction('${g.u}', '${g.n}', 'disapprove')">DISAPPROVE</button>
-        </td></tr>`).join('') + `</tbody>`;
-
         const bGroup = {};
         equipment.filter(e => e.status === 'Borrowed').forEach(e => {
             const k = `${e.borrower}|${e.baseName}`;
@@ -389,24 +338,7 @@ function renderAll() {
 
         const activeBorrowers = [...new Set(equipment.filter(e => e.status === 'Borrowed').map(e => e.borrower))];
         document.getElementById('ReturnUser').innerHTML = `<option value="">-- Select Student --</option>` + 
-        activeBorrowers.map(u => `<option value="${u}">${users[u]?.name || u} (@${u})</option>`).join('');
-
-        const invGroup = {};
-        equipment.forEach(e => {
-            const k = `${e.baseName}|${e.status}|${e.borrower}`;
-            if(!invGroup[k]) invGroup[k] = { name: e.baseName, status: e.status, user: e.borrower, count: 0 };
-            invGroup[k].count++;
-        });
-        document.getElementById('fullInventoryTable').innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Borrower</th></tr></thead><tbody>` +
-        Object.values(invGroup).map(g => `<tr><td>${g.name}</td><td>${g.count}</td><td>${g.status}</td><td style="color:#28a745"><b>${g.user ? '@'+g.user : '--'}</b></td></tr>`).join('') + `</tbody>`;
-
-        document.getElementById('userDatabaseTable').innerHTML = `<thead><tr><th>Name</th><th>User</th><th>Role</th><th>Actions</th></tr></thead><tbody>` +
-        Object.keys(users).map(u => `<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].role}</td><td>
-            ${u !== 'admin' ? `
-                <button class="small-btn btn-green" onclick="makeAdmin('${u}')">MAKE ADMIN</button>
-                <button class="small-btn btn-red" onclick="removeUser('${u}')">REMOVE</button>` 
-            : 'Root'}
-        </td></tr>`).join('') + `</tbody>`;
+        activeBorrowers.map(u => `<option value="${u}">${users[u]?.name} (@${u})</option>`).join('');
     }
 
     const cats = [...new Set(equipment.map(e => e.baseName))];
@@ -437,83 +369,42 @@ function requestBulk() {
             logEvent(currentUser.username, el.dataset.cat, `Requested ${q} units`);
         }
     });
-    alert("Request submitted for approval."); save();
+    alert("Request submitted."); save();
 }
 
-function startScanner() {
-    document.getElementById('stop-scan-btn').classList.remove('hidden');
-    if (html5QrCode) { html5QrCode.stop().catch(err => console.log(err)); }
-    html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-    html5QrCode.start(
-        { facingMode: "environment" }, 
-        config, 
-        (txt) => {
-            if(txt.startsWith('PASS|')) {
-                const parts = txt.split('|');
-                const studentName = parts[1];
-                const itemsCount = parseInt(parts[2]);
-                const studentUser = parts[5];
-                const items = equipment.filter(e => e.borrower === studentUser && e.status === 'Borrowed');
-                if(items.length > 0) {
-                    addToLibrary(studentName, users[studentUser].idNumber, itemsCount);
-                    items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.borrowTime = ''; });
-                    logEvent(studentUser, `${itemsCount} Items`, `QR Return Success`);
-                    alert(`Return Validated!\nName: ${studentName}\nItems: ${itemsCount}`);
-                    stopScanner(); 
-                    save();
-                }
-            }
-        },
-        (errorMessage) => {}
-    ).catch((err) => {
-        console.error("Camera Error:", err);
-        alert("Camera failed. Ensure you are using HTTPS.");
-        document.getElementById('stop-scan-btn').classList.add('hidden');
-    });
+function handleSignup() {
+    const u = document.getElementById('reg-u').value.trim();
+    const n = document.getElementById('reg-name').value.trim();
+    const idNum = document.getElementById('reg-id').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const p = document.getElementById('reg-p').value.trim();
+    if(!u || !n || !p) { alert("Required fields missing"); return; }
+    users[u] = { name: n, idNumber: idNum, email: email, password: p, role: "user" };
+    save(); alert("Registered!"); toggleAuth('login');
 }
 
-function processBulkReturn() {
-    const user = document.getElementById('ReturnUser').value;
-    if(!user) return;
-    const items = equipment.filter(e => e.borrower === user && e.status === 'Borrowed');
-    addToLibrary(users[user].name, users[user].idNumber, items.length);
-    items.forEach(item => { item.status = 'Available'; item.borrower = ''; item.borrowTime = ''; });
-    logEvent(user, `${items.length} Items`, "Manual Return");
-    save();
+function togglePass(inputId, btn) {
+    const input = document.getElementById(inputId);
+    input.type = input.type === "password" ? "text" : "password";
+    btn.innerText = input.type === "password" ? "SHOW" : "HIDE";
 }
-
-function addEquipment() {
-    const n = document.getElementById('eqName').value;
-    const q = parseInt(document.getElementById('eqQty').value);
-    if(!n || isNaN(q)) return;
-    for(let i=0; i<q; i++) equipment.push({ id: 'EQ-'+Math.floor(Math.random()*100000), baseName: n, status: 'Available', borrower: '', borrowTime: '' });
-    save();
-}
-
-function removeUser(u) { if(confirm("Remove user?")) { delete users[u]; save(); } }
 
 function stopScanner() { 
     if(html5QrCode) {
         html5QrCode.stop().then(() => { 
             document.getElementById('stop-scan-btn').classList.add('hidden'); 
             document.getElementById('reader').innerHTML = ""; 
-        }).catch(err => {
-            document.getElementById('stop-scan-btn').classList.add('hidden');
-            document.getElementById('reader').innerHTML = "";
         });
     } 
 }
 
 function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
-
 function showTab(id, btn) { 
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
 }
-
 function toggleAuth(m) {
     document.getElementById('login-form').classList.add('hidden');
     document.getElementById('signup-form').classList.add('hidden');
